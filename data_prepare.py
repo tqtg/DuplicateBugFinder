@@ -12,7 +12,8 @@ from tqdm import tqdm
 parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--data', type=str, default='../data/eclipse')
 parser.add_argument('-r', '--ratio', type=float, default=0.8)
-parser.add_argument('-v', '--vocab', type=int, default=50000)
+parser.add_argument('-wv', '--word_vocab', type=int, default=50000)
+parser.add_argument('-cv', '--char_vocab', type=int, default=100)
 args = parser.parse_args()
 
 UNK = 2
@@ -72,9 +73,9 @@ def normalized_data(bug_ids, train_bug_ids):
   with open(os.path.join(args.data, 'bugs.json'), 'r') as f:
     count = 0
     for line in tqdm(f):
-      # count += 1
-      # if count == 500:
-      #   break
+      count += 1
+      if count == 500:
+        break
 
       bug = json.loads(line)
       bug_id = int(bug["bug_id"])
@@ -124,31 +125,46 @@ def data_spit(bug_pairs):
   return train_bug_ids
 
 
-def build_word_freq(train_text):
+def build_freq_dict(train_text):
   word_freq = defaultdict(int)
+  char_freq = defaultdict(int)
   for text in tqdm(train_text):
     for word in text.split():
       word_freq[word] += 1
-  return word_freq
+    for char in text:
+      char_freq[char] += 1
+  return word_freq, char_freq
 
 
 def build_vocabulary(train_text):
   print('building vocabulary...')
-  word_freq = build_word_freq(train_text)
-  top_words = sorted(word_freq.items(), key=lambda x: -x[1])[:args.vocab - 2]
+  word_freq, char_freq = build_freq_dict(train_text)
+
+  top_words = sorted(word_freq.items(), key=lambda x: -x[1])[:args.word_vocab - 2]
   print('most common word is %s which appears %d times' % (top_words[0][0], top_words[0][1]))
   print('less common word is %s which appears %d times' % (top_words[-1][0], top_words[-1][1]))
-  vocab = {}
-  i = 2  # 0-index is for padding, 1-index is for UNKNOWN word
+  word_vocab = {}
+  i = 2  # 0-index is for padding, 1-index is for UNKNOWN
   for word, freq in top_words:
-    vocab[word] = i
+    word_vocab[word] = i
     i += 1
-  with open(os.path.join(args.data, 'vocab.pkl'), 'wb') as f:
-    pickle.dump(vocab, f)
-  return vocab
+  with open(os.path.join(args.data, 'word_vocab.pkl'), 'wb') as f:
+    pickle.dump(word_vocab, f)
+
+  top_chars = sorted(char_freq.items(), key=lambda x: -x[1])[:args.char_vocab - 2]
+  print('most common char is %s which appears %d times' % (top_chars[0][0], top_chars[0][1]))
+  print('less common char is %s which appears %d times' % (top_chars[-1][0], top_chars[-1][1]))
+  char_vocab = {}
+  i = 2
+  for char, freq in top_chars:
+    char_vocab[char] = i
+    i += 1
+  with open(os.path.join(args.data, 'char_vocab.pkl'), 'wb') as f:
+    pickle.dump(char_vocab, f)
+  return word_vocab, char_vocab
 
 
-def dump_bugs(vocab):
+def dump_bugs(word_vocab, char_vocab):
   bug_dir = os.path.join(args.data, 'bugs')
   if not os.path.exists(bug_dir):
     os.mkdir(bug_dir)
@@ -167,8 +183,10 @@ def dump_bugs(vocab):
       bug['version'] = version_dict[bug['version']]
       bug['component'] = component_dict[bug['component']]
       bug['bug_status'] = bug_status_dict[bug['bug_status']]
-      bug['description'] = [vocab.get(w, UNK) for w in bug['description'].split()]
-      bug['short_description'] = [vocab.get(w, UNK) for w in bug['short_description'].split()]
+      bug['description_word'] = [word_vocab.get(w, UNK) for w in bug['description'].split()]
+      bug['description_char'] = [char_vocab.get(c, UNK) for c in bug['description']]
+      bug['short_description_word'] = [word_vocab.get(w, UNK) for w in bug['short_description'].split()]
+      bug['short_description_char'] = [char_vocab.get(c, UNK) for c in bug['short_description']]
       with open(os.path.join(bug_dir, bug['bug_id'] + '.pkl'), 'wb') as f:
         pickle.dump(bug, f)
 
@@ -182,8 +200,8 @@ def main():
   train_text = normalized_data(bug_ids, train_bug_ids)
   print("Number of train docs: {}".format(len(train_text)))
 
-  vocab = build_vocabulary(train_text)
-  dump_bugs(vocab)
+  word_vocab, char_vocab = build_vocabulary(train_text)
+  dump_bugs(word_vocab, char_vocab)
 
 
 if __name__ == '__main__':
