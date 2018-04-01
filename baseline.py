@@ -52,7 +52,7 @@ class Net(torch.nn.Module):
     self.prop_MLP = nn.Sequential(nn.Linear(args.n_prop, 256), nn.ReLU(),
                                   nn.Linear(256, 128), nn.ReLU())
     self.projection = nn.Linear(args.n_filters * 6 + 128, 128)
-
+    self.out = nn.Linear(128,2)
 
   def forward(self, x):
     # x = [info, desc, short desc]
@@ -66,4 +66,5 @@ class Net(torch.nn.Module):
 
     feature = torch.cat([prop_feature, short_desc_feature, long_desc_feature], -1)
     feature = F.relu(self.projection(feature))
-    return feature
+    out = self.out(feature)
+    return out
