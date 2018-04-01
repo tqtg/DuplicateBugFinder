@@ -33,8 +33,9 @@ def read_batch(batch_bugs):
   batch_x['info'] = info
   batch_x['desc'] = (word1, char1)
   batch_x['short_desc'] = (word2, char2)
-
-  batch_y = Variable(torch.from_numpy(np.random.rand(64, 1))).cuda()
+  
+  y_true = np.random.randint(low=0,high=2, size=(64))
+  batch_y = Variable(torch.from_numpy(y_true)).cuda()
 
   return batch_x, batch_y
 
