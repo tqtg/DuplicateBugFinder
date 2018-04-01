@@ -9,7 +9,7 @@ PHAM Hong Quang\
 LE Trung Hoang
 
 ## How to run
-Get data sets from here: http://alazar.people.ysu.edu/msr14data/ \
+Get data sets from here: http://alazar.people.ysu.edu/msr14data/
 
 ### Data preprocessing
 ```
