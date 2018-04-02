@@ -27,12 +27,11 @@ def train(epoch, net, optimizer):
   margin = MarginLoss(margin = 1.)
   for batch_idx, (batch_x, batch_y) in data_generator.batch_iterator(args.data, args.batch_size):
     optimizer.zero_grad()
-    predp = net(batch_x)
-    predm = net(batch_x)
+    pred_pos = net(batch_x)
+    pred_neg = net(batch_x)
     pred = net(batch_x)
     # print(preds)
-    pdb.set_trace()
-    loss = margin(pred, predp, predm)
+    loss = margin(pred, pred_pos, pred_neg)
     loss.backward()
     optimizer.step()
 
