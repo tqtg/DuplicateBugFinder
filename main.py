@@ -40,7 +40,7 @@ def test(net):
 
 
 def main():
-  net = baseline.Net(args)
+  net = baseline.BaseNet(args)
   net.cuda()
   optimizer = optim.Adam(net.parameters(), lr=args.lr)
   for epoch in range(1, args.epochs + 1):
