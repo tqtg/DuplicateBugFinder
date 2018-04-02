@@ -27,10 +27,10 @@ def train(epoch, net, optimizer):
   print('Epoch: {}'.format(epoch))
   net.train()
   margin = MarginLoss(margin = 1.)
-  for batch_idx, (batch_x, batch_y) in data_generator.batch_iterator(args.data, args.batch_size):
+  for batch_idx, (batch_x, batch_pos, batch_neg) in data_generator.batch_iterator(args.data, args.batch_size):
     optimizer.zero_grad()
-    pred_pos = net(batch_x)
-    pred_neg = net(batch_x)
+    pred_pos = net(batch_pos)
+    pred_neg = net(batch_neg)
     pred = net(batch_x)
     loss = margin(pred, pred_pos, pred_neg)
     loss.backward()
