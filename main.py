@@ -37,7 +37,7 @@ def train(epoch, net, optimizer):
     optimizer.step()
 
 def export(net, data='../data/eclipse/'):
-  bug_ids = read_bug_ids(data)[:10000]
+  bug_ids = read_bug_ids(data)
   feature = {}
 
   batch_features = net.predict(bug_ids)

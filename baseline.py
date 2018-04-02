@@ -27,8 +27,8 @@ class BaseNet(torch.nn.Module):
 
   def forward(self, x):
     # x = [info, desc, short desc]
-    info = x['info']
-    prop_feature = self.prop_MLP(info.float())
+    #info = x['info']
+    #prop_feature = self.prop_MLP(info.float())
     desc = x['desc'][0]
     
     embedded_desc = self.word_embed(desc).transpose(1, 2)
@@ -45,7 +45,8 @@ class BaseNet(torch.nn.Module):
     out, hidden = self.short_desc(embedded_short_desc)
 
     short_desc_feature = torch.mean(out, dim=1)
-    feature = torch.cat([prop_feature, short_desc_feature, long_desc_feature], -1)
+    #feature = torch.cat([prop_feature, short_desc_feature, long_desc_feature], -1)
+    feature = torch.cat([short_desc_feature, long_desc_feature], -1)
     feature = F.relu(self.projection(feature))
     return feature
 
