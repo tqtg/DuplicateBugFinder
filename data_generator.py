@@ -32,7 +32,7 @@ def data_padding(data):
   return padded_data.astype(np.int)
 
 
-def read_batch_bugs(batch_bugs, data):
+def read_batch_bugs(batch_bugs, data, test = False):
   desc_word = []
   desc_char = []
   short_desc_word = []
@@ -47,10 +47,10 @@ def read_batch_bugs(batch_bugs, data):
   desc_word = Variable(torch.from_numpy(data_padding(desc_word))).cuda()
   desc_char = Variable(torch.from_numpy(data_padding(desc_char))).cuda()
 
-  short_desc_word = Variable(torch.from_numpy(data_padding(short_desc_word)), volatile = True).cuda()
-  short_desc_char = Variable(torch.from_numpy(data_padding(short_desc_char)), volatile = True).cuda()
+  short_desc_word = Variable(torch.from_numpy(data_padding(short_desc_word)), volatile = test).cuda()
+  short_desc_char = Variable(torch.from_numpy(data_padding(short_desc_char)), volatile = test).cuda()
 
-  info = Variable(torch.from_numpy(np.random.rand(sz, 50)), volatile = True).cuda()
+  info = Variable(torch.from_numpy(np.random.rand(sz, 50)), volatile = test).cuda()
 
   batch_bugs = dict()
   batch_bugs['info'] = info

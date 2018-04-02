@@ -64,7 +64,7 @@ class BaseNet(torch.nn.Module):
           break
         
         batch_ids.append(bug_ids[offset])
-      yield loop, read_batch_bugs(batch_ids, data = '../data/eclipse/')
+      yield loop, read_batch_bugs(batch_ids, data = '../data/eclipse/', test = True)
 
   def predict(self, bug_ids):
     out = []

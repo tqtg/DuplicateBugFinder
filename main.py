@@ -8,6 +8,7 @@ import torch.nn.functional as F
 import pdb
 from tqdm import tqdm
 from loss import *
+import random
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--data', type=str, default='../data/eclipse')
@@ -50,7 +51,7 @@ def export(net, data='../data/eclipse/'):
 
 def test(net, data = '../data/eclipse/', threshold = 5):
   features = torch.load('feature.t7')
-  test_pairs = read_data(os.path.join(data, 'test.txt'))[:5]
+  test_pairs = read_data(os.path.join(data, 'test.txt'))[:2]
   cosine = nn.CosineSimilarity(dim = 0, eps= 1e-6)
   recall = 0.
   for idx in test_pairs:
@@ -58,10 +59,12 @@ def test(net, data = '../data/eclipse/', threshold = 5):
     query = idx[0]
     match = idx[1]
     top_k = {}
-    for k in features.keys():
-      if k == query or query not in features.keys():
-        continue
-
+    samples = random.sample(features.keys(), 100)
+    while query in samples:
+        samples = random.sample(features.keys(), 100)
+    for k in samples:
+      if query not in features.keys():
+          continue
       cos = cosine(features[k], features[query])
       top_k[k] = cos.data[0]
     inv_map = {v: k for k, v in top_k.iteritems()}
@@ -76,13 +79,13 @@ def main():
   net = baseline.BaseNet(args)
   net.cuda()
   optimizer = optim.Adam(net.parameters(), lr=args.lr)
-  export(net)
-  print(test(net))
   '''
   for epoch in range(1, args.epochs + 1):
     train(epoch, net, optimizer)
   torch.save(net.module, 'checkpoint.t7')
-  test(net)
+  export(net)
   '''
+  print(test(net))
+  
 if __name__ == "__main__":
   main()
