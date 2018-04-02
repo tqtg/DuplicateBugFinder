@@ -1,17 +1,16 @@
 import argparse
+
+import torch.optim as optim
+
 import baseline
 import data_generator
-import torch
-import torch.optim as optim
-import torch.nn.functional as F
-import pdb
 from loss import *
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--data', type=str, default='./data/eclipse')
+parser.add_argument('--data', type=str, default='../data/eclipse')
 parser.add_argument('--n_words', type=int, default=50000)
 parser.add_argument('--n_chars', type=int, default=100)
-parser.add_argument('--word_dim', type=int, default=128)
+parser.add_argument('--word_dim', type=int, default=300)
 parser.add_argument('--char_dim', type=int, default=64)
 parser.add_argument('--n_filters', type=int, default=128)
 parser.add_argument('--n_prop', type=int, default=50)
@@ -25,13 +24,12 @@ def train(epoch, net, optimizer):
   print('Epoch: {}'.format(epoch))
   net.train()
   margin = MarginLoss(margin = 1.)
-  for batch_idx, (batch_x, batch_y) in data_generator.batch_iterator(args.data, args.batch_size):
+  for batch_idx, (batch_x, batch_x_pos, batch_x_neg) in data_generator.batch_iterator(args.data, args.batch_size):
     optimizer.zero_grad()
-    pred_pos = net(batch_x)
-    pred_neg = net(batch_x)
-    pred = net(batch_x)
-    # print(preds)
-    loss = margin(pred, pred_pos, pred_neg)
+    x_features = net(batch_x)
+    x_pos_features = net(batch_x_pos)
+    x_neg_features = net(batch_x_neg)
+    loss = margin(x_features, x_pos_features, x_neg_features)
     loss.backward()
     optimizer.step()
 

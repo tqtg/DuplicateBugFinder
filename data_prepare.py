@@ -43,7 +43,7 @@ def normalize_text(text):
   text = re.sub(r"\.+", ".", text)
   text = re.sub(r"\\n", " ", text)
   text = re.sub(r"\\t", " ", text)
-  return ' '.join(nltk.word_tokenize(text))
+  return ' '.join([word.lower() for word in nltk.word_tokenize(text)])
 
 
 def save_dict(set, filename):
@@ -185,8 +185,12 @@ def dump_bugs(word_vocab, char_vocab):
       bug['bug_status'] = bug_status_dict[bug['bug_status']]
       bug['description_word'] = [word_vocab.get(w, UNK) for w in bug['description'].split()]
       bug['description_char'] = [char_vocab.get(c, UNK) for c in bug['description']]
+      if len(bug['short_description']) == 0:
+        bug['short_description'] = bug['description'][:10]
       bug['short_description_word'] = [word_vocab.get(w, UNK) for w in bug['short_description'].split()]
       bug['short_description_char'] = [char_vocab.get(c, UNK) for c in bug['short_description']]
+      bug.pop('description')
+      bug.pop('short_description')
       with open(os.path.join(bug_dir, bug['bug_id'] + '.pkl'), 'wb') as f:
         pickle.dump(bug, f)
 

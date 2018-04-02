@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import pdb
+
+
 class MarginLoss(torch.nn.Module):
     def __init__(self, margin=1.0):
         super(MarginLoss, self).__init__()
@@ -11,4 +12,4 @@ class MarginLoss(torch.nn.Module):
         fb1 = self.cos(x, x_pos)
         fb2 = self.cos(x, x_neg)
         loss = self.margin - fb1 + fb2
-        return F.relu(loss).sum()
+        return F.relu(loss).mean()

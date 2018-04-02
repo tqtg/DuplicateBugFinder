@@ -1,3 +1,4 @@
+import cPickle as pickle
 import os
 import random
 
@@ -22,24 +23,54 @@ def get_neg_bug(invalid_bugs, bug_ids):
   return neg_bug
 
 
-def read_batch(batch_bugs):
-  word1 = Variable(torch.from_numpy(np.random.randint(low=0, high=1999, size=(64, 200)))).cuda()
-  char1 = Variable(torch.from_numpy(np.random.randint(low=0, high=99, size=(64, 500)))).cuda()
+def data_padding(data):
+  max_seq_size = max([len(seq) for seq in data])
+  padded_data = np.zeros(shape=[len(data), max_seq_size])
+  for i, seq in enumerate(data):
+    for j, token in enumerate(seq):
+      padded_data[i, j] = int(token)
+  return padded_data.astype(np.int)
 
-  word2 = Variable(torch.from_numpy(np.random.randint(low=0, high=1999, size=(64, 50)))).cuda()
-  char2 = Variable(torch.from_numpy(np.random.randint(low=0, high=99, size=(64, 200)))).cuda()
+
+def read_batch_bugs(batch_bugs, data):
+  desc_word = []
+  desc_char = []
+  short_desc_word = []
+  short_desc_char = []
+  for bug_id in batch_bugs:
+    bug = pickle.load(open(os.path.join(data, 'bugs', '{}.pkl'.format(20)), 'rb'))
+    desc_word.append(bug['description_word'])
+    desc_char.append(bug['description_char'])
+    short_desc_word.append(bug['short_description_word'])
+    short_desc_char.append(bug['short_description_char'])
+
+  desc_word = Variable(torch.from_numpy(data_padding(desc_word))).cuda()
+  desc_char = Variable(torch.from_numpy(data_padding(desc_char))).cuda()
+
+  short_desc_word = Variable(torch.from_numpy(data_padding(short_desc_word))).cuda()
+  short_desc_char = Variable(torch.from_numpy(data_padding(short_desc_char))).cuda()
 
   info = Variable(torch.from_numpy(np.random.rand(64, 50))).cuda()
 
-  batch_x = dict()
-  batch_x['info'] = info
-  batch_x['desc'] = (word1, char1)
-  batch_x['short_desc'] = (word2, char2)
-  
-  y_true = np.random.randint(low=0,high=2, size=(64))
-  batch_y = Variable(torch.from_numpy(y_true)).cuda()
+  batch_bugs = dict()
+  batch_bugs['info'] = info
+  batch_bugs['desc'] = (desc_word, desc_char)
+  batch_bugs['short_desc'] = (short_desc_word, short_desc_char)
 
-  return batch_x, batch_y
+  return batch_bugs
+
+
+def read_batch_triplets(batch_triplets, data):
+  batch_input_bugs = []
+  batch_pos_bugs = []
+  batch_neg_bugs = []
+  for triplet in batch_triplets:
+    batch_input_bugs.append(triplet[0])
+    batch_pos_bugs.append(triplet[1])
+    batch_neg_bugs.append(triplet[2])
+  return read_batch_bugs(batch_input_bugs, data), \
+         read_batch_bugs(batch_pos_bugs, data), \
+         read_batch_bugs(batch_neg_bugs, data)
 
 
 def read_data(data_file):
@@ -64,12 +95,12 @@ def batch_iterator(data, batch_size):
     num_batches += 1
   loop = tqdm(range(num_batches))
   for i in loop:
-    batch_bugs = []
+    batch_triplets = []
     for j in range(batch_size):
       offset = batch_size * i + j
       if offset >= len(train_data):
         break
       neg_bug = get_neg_bug(train_data[offset], bug_ids)
-      batch_bugs.append(train_data[offset].append(neg_bug))
-    yield loop, read_batch(batch_bugs)
-
+      train_data[offset].append(neg_bug)
+      batch_triplets.append(train_data[offset])
+    yield loop, read_batch_triplets(batch_triplets, data)

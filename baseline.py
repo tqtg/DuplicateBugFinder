@@ -1,18 +1,14 @@
-import pdb
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-from utils import load_emb_matrix
 
 
 class BaseNet(torch.nn.Module):
   def __init__(self, args):
     super(BaseNet, self).__init__()
     self.word_embed = nn.Embedding(args.n_words, args.word_dim)
-    emb_matrix = load_emb_matrix(args.n_words, args.word_dim, args.data)
-    self.word_embed.weight = nn.Parameter(torch.from_numpy(emb_matrix))
+    # emb_matrix = load_emb_matrix(args.n_words, args.word_dim, args.data)
+    # self.word_embed.weight = nn.Parameter(torch.from_numpy(emb_matrix).float())
 
     self.word_conv3 = nn.Conv1d(args.word_dim, args.n_filters, 3)
     self.word_conv4 = nn.Conv1d(args.word_dim, args.n_filters, 4)
@@ -20,7 +16,7 @@ class BaseNet(torch.nn.Module):
 
     self.long_desc_CNN = nn.MaxPool1d(args.n_filters)
 
-    self.short_desc = torch.nn.GRU(input_size =128, hidden_size=256, bidirectional = True)
+    self.short_desc = torch.nn.GRU(input_size=300, hidden_size=256, bidirectional = True)
 
     self.prop_MLP = nn.Sequential(nn.Linear(args.n_prop, 256), nn.ReLU(),
                                   nn.Linear(256, 128), nn.ReLU())
@@ -43,12 +39,11 @@ class BaseNet(torch.nn.Module):
     long_desc_feature = torch.cat([w_conv3, w_conv4, w_conv5], -2).squeeze()
 
     short_desc = x['short_desc'][0]
-    embedded_short_desc = self.word_embed(short_desc).transpose(1, 2)
+    embedded_short_desc = self.word_embed(short_desc)
     out, hidden = self.short_desc(embedded_short_desc)
 
     short_desc_feature = torch.mean(out, dim=1)
 
     feature = torch.cat([prop_feature, short_desc_feature, long_desc_feature], -1)
     feature = F.relu(self.projection(feature))
-    pdb.set_trace()
     return feature
