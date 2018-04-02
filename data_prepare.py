@@ -1,7 +1,7 @@
 import argparse
+import cPickle as pickle
 import json
 import os
-import pickle
 import random
 import re
 from collections import defaultdict

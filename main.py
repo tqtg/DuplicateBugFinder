@@ -1,8 +1,10 @@
 import argparse
+
+import numpy as np
+import torch.optim as optim
+
 import baseline
 import data_generator
-import torch.optim as optim
-import torch.nn.functional as F
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--data', type=str, default='../data/eclipse')
@@ -22,13 +24,14 @@ args = parser.parse_args()
 def train(epoch, net, optimizer):
   print('Epoch: {}'.format(epoch))
   net.train()
-  for batch_idx, (batch_x, batch_y) in data_generator.batch_iterator(args.data, args.batch_size):
-    optimizer.zero_grad()
-    preds = net(batch_x)
+  for loop, (batch_x, batch_y) in data_generator.batch_iterator(args.data, args.batch_size):
+    # optimizer.zero_grad()
+    # preds = net(batch_x)
     # print(preds)
     # loss = F.cross_entropy(preds, batch_y)
     # loss.backward()
     # optimizer.step()
+    loop.set_postfix(loss=np.random.rand())
 
 
 

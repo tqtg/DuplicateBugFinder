@@ -17,7 +17,6 @@ class textCNN(torch.nn.Module):
     self.char_conv4 = nn.Conv1d(args.char_dim, args.n_filters, 4)
     self.char_conv5 = nn.Conv1d(args.char_dim, args.n_filters, 5)
 
-    self.pool = nn.MaxPool1d(args.n_filters)
 
   def forward(self, x):
     w_emb = self.word_embed(x[0]).transpose(1, 2)

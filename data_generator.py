@@ -1,8 +1,10 @@
 import os
+import random
+
 import numpy as np
 import torch
 from torch.autograd import Variable
-import random
+from tqdm import tqdm
 
 
 def read_bug_ids(data):
@@ -40,19 +42,34 @@ def read_batch(batch_bugs):
   return batch_x, batch_y
 
 
+def read_data(data_file):
+  data = []
+  with open(data_file, 'r') as f:
+    for line in f:
+      bug1, bug2 = line.split()
+      data.append([int(bug1), int(bug2)])
+  return data
+
+
+train_data = None
+
 def batch_iterator(data, batch_size):
-  train_file = open(os.path.join(data, 'train.txt'), 'r')
+  global train_data
+  if not train_data:
+    train_data = read_data(os.path.join(data, 'train.txt'))
+  random.shuffle(train_data)
   bug_ids = read_bug_ids(data)
-  batch_idx = 0
-  batch_bugs = []
-  for line in train_file:
-    bug1, bug2 = line.split()
-    neg_bug = get_neg_bug([bug1, bug2], bug_ids)
-    batch_bugs.append([bug1, bug2, neg_bug])
-    if len(batch_bugs) == batch_size:
-      batch_idx += 1
-      yield batch_idx, read_batch(batch_bugs)
-      batch_bugs = []
-  if len(batch_bugs) > 0:  # last batch
-    batch_idx += 1
-    yield batch_idx, read_batch(batch_bugs)
+  num_batches = int(len(train_data) / batch_size)
+  if len(data) % batch_size > 0:
+    num_batches += 1
+  loop = tqdm(range(num_batches))
+  for i in loop:
+    batch_bugs = []
+    for j in range(batch_size):
+      offset = batch_size * i + j
+      if offset >= len(train_data):
+        break
+      neg_bug = get_neg_bug(train_data[offset], bug_ids)
+      batch_bugs.append(train_data[offset].append(neg_bug))
+    yield loop, read_batch(batch_bugs)
+
