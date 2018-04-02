@@ -26,15 +26,16 @@ args = parser.parse_args()
 def train(epoch, net, optimizer):
   print('Epoch: {}'.format(epoch))
   net.train()
-  margin = MarginLoss(margin = 1.)
+  margin = MarginLoss(margin = 0.5)
   for batch_idx, (batch_x, batch_pos, batch_neg) in data_generator.batch_iterator(args.data, args.batch_size):
-    optimizer.zero_grad()
     pred_pos = net(batch_pos)
     pred_neg = net(batch_neg)
     pred = net(batch_x)
     loss = margin(pred, pred_pos, pred_neg)
+    optimizer.zero_grad()
     loss.backward()
     optimizer.step()
+      
 
 def export(net, data='../data/eclipse/'):
   bug_ids = read_bug_ids(data)

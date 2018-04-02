@@ -12,4 +12,5 @@ class MarginLoss(torch.nn.Module):
         fb1 = self.cos(x, x_pos)
         fb2 = self.cos(x, x_neg)
         loss = self.margin - fb1 + fb2
-        return F.relu(loss).mean()
+        loss = F.relu(loss)
+        return loss.mean()

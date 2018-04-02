@@ -47,10 +47,10 @@ def read_batch_bugs(batch_bugs, data):
   desc_word = Variable(torch.from_numpy(data_padding(desc_word))).cuda()
   desc_char = Variable(torch.from_numpy(data_padding(desc_char))).cuda()
 
-  short_desc_word = Variable(torch.from_numpy(data_padding(short_desc_word))).cuda()
-  short_desc_char = Variable(torch.from_numpy(data_padding(short_desc_char))).cuda()
+  short_desc_word = Variable(torch.from_numpy(data_padding(short_desc_word)), volatile = True).cuda()
+  short_desc_char = Variable(torch.from_numpy(data_padding(short_desc_char)), volatile = True).cuda()
 
-  info = Variable(torch.from_numpy(np.random.rand(sz, 50))).cuda()
+  info = Variable(torch.from_numpy(np.random.rand(sz, 50)), volatile = True).cuda()
 
   batch_bugs = dict()
   batch_bugs['info'] = info

@@ -22,7 +22,7 @@ class BaseNet(torch.nn.Module):
 
     self.prop_MLP = nn.Sequential(nn.Linear(args.n_prop, 256), nn.ReLU(),
                                   nn.Linear(256, 128), nn.ReLU())
-    self.projection = nn.Linear(args.n_filters * 3 + 128 + 256*2, 128)
+    self.projection = nn.Linear(args.n_filters * 3 + 256*2, 128)
 
 
   def forward(self, x):
