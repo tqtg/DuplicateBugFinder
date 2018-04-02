@@ -1,7 +1,7 @@
 import cPickle as pickle
 import os
 import random
-
+import pdb
 import numpy as np
 import torch
 from torch.autograd import Variable
@@ -43,14 +43,14 @@ def read_batch_bugs(batch_bugs, data):
     desc_char.append(bug['description_char'])
     short_desc_word.append(bug['short_description_word'])
     short_desc_char.append(bug['short_description_char'])
-
+  sz = len(desc_word)
   desc_word = Variable(torch.from_numpy(data_padding(desc_word))).cuda()
   desc_char = Variable(torch.from_numpy(data_padding(desc_char))).cuda()
 
   short_desc_word = Variable(torch.from_numpy(data_padding(short_desc_word))).cuda()
   short_desc_char = Variable(torch.from_numpy(data_padding(short_desc_char))).cuda()
 
-  info = Variable(torch.from_numpy(np.random.rand(64, 50))).cuda()
+  info = Variable(torch.from_numpy(np.random.rand(sz, 50))).cuda()
 
   batch_bugs = dict()
   batch_bugs['info'] = info
