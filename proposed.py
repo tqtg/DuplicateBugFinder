@@ -9,6 +9,8 @@ class Net(torch.nn.Module):
   def __init__(self, args):
     super(Net, self).__init__()
     self.word_embed = nn.Embedding(args.n_words, args.word_dim)
+    emb_matrix = load_emb_matrix(args.n_words, args.word_dim, args.data)
+    self.word_embed.weight = nn.Parameter(torch.from_numpy(emb_matrix).float())
     self.char_embed = nn.Embedding(args.n_chars, args.char_dim)
 
     self.word_conv3_short = nn.Conv1d(args.word_dim, args.n_filters, 3, padding = 3)
