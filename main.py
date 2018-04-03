@@ -62,7 +62,7 @@ def test(net, data = '../data/eclipse/', threshold = 25):
     recall_ = 0.
     idx = test_pairs[i]
     query = idx[0]
-    match = [idx[1:]]
+    match = idx[1:]
     top_k = {}
     '''
     samples = random.sample(features.keys(), 100)
