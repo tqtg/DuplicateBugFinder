@@ -1,5 +1,6 @@
 import argparse
 
+import numpy as np
 import torch.optim as optim
 
 import baseline
@@ -40,17 +41,29 @@ def train(epoch, net, optimizer):
 
 def export(net, data):
   bug_ids = read_bug_ids(data)
-  feature = {}
+  features = {}
 
-  batch_features = net.predict(bug_ids)
-  for i, bug_id in enumerate(bug_ids):
-    feature[bug_id] = batch_features[i]
- 
-  torch.save(feature, str(args.net) + '_feature.t7')
+  batch_size = 64
+  num_batch = int(len(bug_ids) / batch_size)
+  if len(bug_ids) % batch_size > 0:
+    num_batch += 1
+  loop = tqdm(range(num_batch))
+  for i in loop:
+    batch_ids = []
+    for j in range(batch_size):
+      offset = batch_size * i + j
+      if offset >= len(bug_ids):
+        break
+      batch_ids.append(bug_ids[offset])
+    batch_features = net(read_batch_bugs(batch_ids, data, test=True))
+    for bug_id, feature in zip(batch_ids, batch_features):
+      features[bug_id] = feature
+
+  torch.save(features, str(args.net) + '_features.t7')
 
 
 def test(data, top_k):
-  features = torch.load(str(args.net) + '_feature.t7')
+  features = torch.load(str(args.net) + '_features.t7')
   test_pairs = read_test_data(os.path.join(data, 'test.txt'))
   cosine_batch = nn.CosineSimilarity(dim=1, eps=1e-6)
   recall = []
@@ -61,7 +74,7 @@ def test(data, top_k):
     recall_ = 0.
     idx = test_pairs[i]
     query = idx[0]
-    ground_truth = idx[1:]
+    ground_truth = idx[1]
 
     '''
     samples = random.sample(features.keys(), 100)
@@ -79,7 +92,8 @@ def test(data, top_k):
     for m in candidates:
       if m in ground_truth:
         recall_ += 1
-    r = recall_ / len(ground_truth)
+
+    r = float(recall_ / len(ground_truth))
     recall.append(r)
     '''
     true_score = cosine(features[query], features[ground_truth]).data[0]
@@ -87,7 +101,7 @@ def test(data, top_k):
         recall += 1
     recall /= len(test_pairs)
     '''
-  return sum(recall)
+  return np.array(recall).mean()
 
 
 def main():
@@ -98,14 +112,15 @@ def main():
     net = proposed.Net(args)
     args.net = 'proposed'
   net.cuda()
-  optimizer = optim.Adam(net.parameters(), lr=args.lr)
-  for epoch in range(1, args.epochs + 1):
-    train(epoch, net, optimizer)
 
-  torch.save(net, str(args.net) + '_checkpoint.t7')
-  
-  export(net, args.data)
-  print(test(args.data, args.top_k))
+  if not os.path.exists(str(args.net) + '_checkpoint.t7'):
+    optimizer = optim.Adam(net.parameters(), lr=args.lr)
+    for epoch in range(1, args.epochs + 1):
+      train(epoch, net, optimizer)
+    torch.save(net, str(args.net) + '_checkpoint.t7')
+  if not os.path.exists(str(args.net) + '_features.t7'):
+    export(net, args.data)
+  print('{:.4f}'.format(test(args.data, args.top_k)))
   
 if __name__ == "__main__":
   main()

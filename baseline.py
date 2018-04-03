@@ -1,10 +1,11 @@
-import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import pdb
-from utils import *
 from data_generator import *
-from tqdm import tqdm
+import torch.nn as nn
+import torch.nn.functional as F
+
+from data_generator import *
+
 
 class BaseNet(torch.nn.Module):
   def __init__(self, args):
@@ -49,27 +50,3 @@ class BaseNet(torch.nn.Module):
     feature = torch.cat([short_desc_feature, long_desc_feature], -1)
     feature = F.relu(self.projection(feature))
     return feature
-
-  def gen(self, bug_ids):
-    batch_size = 64
-    num_batch = int(len(bug_ids) / batch_size)
-    if len(bug_ids) % batch_size > 0:
-      num_batch += 1
-    loop = tqdm(range(num_batch))
-    for i in loop:
-      batch_ids = []
-      for j in range(batch_size):
-        offset = batch_size*i + j
-        if offset >= len(bug_ids):
-          break
-        
-        batch_ids.append(bug_ids[offset])
-      yield loop, read_batch_bugs(batch_ids, data = '../data/eclipse/', test = True)
-
-  def predict(self, bug_ids):
-    out = []
-    for _, x in self.gen(bug_ids):
-      
-      out.extend(self.forward(x))
-    #flat_list = [item for sublist in out for item in sublist]
-    return out

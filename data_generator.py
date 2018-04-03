@@ -38,7 +38,7 @@ def read_batch_bugs(batch_bugs, data, test = False):
   short_desc_word = []
   short_desc_char = []
   for bug_id in batch_bugs:
-    bug = pickle.load(open(os.path.join(data, 'bugs', '{}.pkl'.format(20)), 'rb'))
+    bug = pickle.load(open(os.path.join(data, 'bugs', '{}.pkl'.format(bug_id)), 'rb'))
     desc_word.append(bug['description_word'])
     desc_char.append(bug['description_char'])
     short_desc_word.append(bug['short_description_word'])
