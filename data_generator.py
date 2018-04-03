@@ -23,9 +23,9 @@ def get_neg_bug(invalid_bugs, bug_ids):
   return neg_bug
 
 
-def data_padding(data):
-  max_seq_size = max([len(seq) for seq in data])
-  padded_data = np.zeros(shape=[len(data), max_seq_size])
+def data_padding(data, max_seq_length):
+  max_seq_length = max(max([len(seq) for seq in data]), max_seq_length)
+  padded_data = np.zeros(shape=[len(data), max_seq_length])
   for i, seq in enumerate(data):
     for j, token in enumerate(seq):
       padded_data[i, j] = int(token)
@@ -44,11 +44,11 @@ def read_batch_bugs(batch_bugs, data, test = False):
     short_desc_word.append(bug['short_description_word'])
     short_desc_char.append(bug['short_description_char'])
   sz = len(desc_word)
-  desc_word = Variable(torch.from_numpy(data_padding(desc_word))).cuda()
-  desc_char = Variable(torch.from_numpy(data_padding(desc_char))).cuda()
+  desc_word = Variable(torch.from_numpy(data_padding(desc_word, 300))).cuda()
+  desc_char = Variable(torch.from_numpy(data_padding(desc_char, 2000))).cuda()
 
-  short_desc_word = Variable(torch.from_numpy(data_padding(short_desc_word)), volatile = test).cuda()
-  short_desc_char = Variable(torch.from_numpy(data_padding(short_desc_char)), volatile = test).cuda()
+  short_desc_word = Variable(torch.from_numpy(data_padding(short_desc_word, 30)), volatile = test).cuda()
+  short_desc_char = Variable(torch.from_numpy(data_padding(short_desc_char, 200)), volatile = test).cuda()
 
   info = Variable(torch.FloatTensor(sz, 50).fill_(0), volatile = test).cuda()
 
