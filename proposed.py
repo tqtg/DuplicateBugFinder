@@ -1,9 +1,11 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import pdb
 from tqdm import tqdm
-from data_generator import *
+
+from data_generator import read_batch_bugs
+from utils import load_emb_matrix
+
 
 class Net(torch.nn.Module):
   def __init__(self, args):

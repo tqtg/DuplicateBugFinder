@@ -18,11 +18,11 @@ class BaseNet(torch.nn.Module):
 
     self.long_desc_CNN = nn.MaxPool1d(args.n_filters)
 
-    self.short_desc = torch.nn.GRU(input_size=args.word_dim, hidden_size=256, bidirectional = True)
+    self.short_desc = torch.nn.GRU(input_size=args.word_dim, hidden_size=50, bidirectional = True)
 
-    self.prop_MLP = nn.Sequential(nn.Linear(args.n_prop, 256), nn.ReLU(),
-                                  nn.Linear(256, 128), nn.ReLU())
-    self.projection = nn.Linear(args.n_filters * 3 + 256*2, 128)
+    # self.prop_MLP = nn.Sequential(nn.Linear(args.n_prop, 256), nn.ReLU(),
+    #                               nn.Linear(256, 128), nn.ReLU())
+    self.projection = nn.Linear(args.n_filters * 3 + 50*2, 128)
 
 
   def forward(self, x):

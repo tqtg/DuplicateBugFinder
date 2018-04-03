@@ -7,12 +7,15 @@ import re
 from collections import defaultdict
 
 import nltk
+from nltk.stem import PorterStemmer
 from tqdm import tqdm
+
+ps = PorterStemmer()
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--data', type=str, default='../data/eclipse')
 parser.add_argument('-r', '--ratio', type=float, default=0.9)
-parser.add_argument('-wv', '--word_vocab', type=int, default=50000)
+parser.add_argument('-wv', '--word_vocab', type=int, default=20000)
 parser.add_argument('-cv', '--char_vocab', type=int, default=100)
 args = parser.parse_args()
 
@@ -48,7 +51,8 @@ def normalize_text(text):
     text = ' '.join(re.compile(r'\W+', re.UNICODE).split(text))
   except:
     text = 'description'
-  return ' '.join([word.lower() for word in nltk.word_tokenize(text)])
+  return ' '.join([ps.stem(word).lower() for word in nltk.word_tokenize(text)])
+
 
 def save_dict(set, filename):
   with open(os.path.join(args.data, filename), 'w') as f:
@@ -98,14 +102,14 @@ def normalized_data(bug_ids):
       bug.pop('creation_ts', None)
 
       bug['description'] = normalize_text(bug['description'])
-      if 'short_description' in bug:
-        bug['short_description'] = normalize_text(bug['short_description'])
+      if 'short_desc' in bug:
+        bug['short_desc'] = normalize_text(bug['short_desc'])
       else:
-        bug['short_description'] = ''
+        bug['short_desc'] = ''
       normalized_bugs.write('{}\n'.format(json.dumps(bug)))
 
       text.append(bug['description'])
-      text.append(bug['short_description'])
+      text.append(bug['short_desc'])
   save_dict(products, 'product.dic')
   save_dict(bug_severities, 'bug_severity.dic')
   save_dict(priorities, 'priority.dic')
@@ -191,12 +195,12 @@ def dump_bugs(word_vocab, char_vocab):
       bug['bug_status'] = bug_status_dict[bug['bug_status']]
       bug['description_word'] = [word_vocab.get(w, UNK) for w in bug['description'].split()]
       bug['description_char'] = [char_vocab.get(c, UNK) for c in bug['description']]
-      if len(bug['short_description']) == 0:
-        bug['short_description'] = bug['description'][:10]
-      bug['short_description_word'] = [word_vocab.get(w, UNK) for w in bug['short_description'].split()]
-      bug['short_description_char'] = [char_vocab.get(c, UNK) for c in bug['short_description']]
+      if len(bug['short_desc']) == 0:
+        bug['short_desc'] = bug['description'][:10]
+      bug['short_desc_word'] = [word_vocab.get(w, UNK) for w in bug['short_desc'].split()]
+      bug['short_desc_char'] = [char_vocab.get(c, UNK) for c in bug['short_desc']]
       bug.pop('description')
-      bug.pop('short_description')
+      bug.pop('short_desc')
       with open(os.path.join(bug_dir, bug['bug_id'] + '.pkl'), 'wb') as f:
         pickle.dump(bug, f)
 

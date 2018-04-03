@@ -10,25 +10,25 @@ from loss import *
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--data', type=str, default='../data/eclipse')
-parser.add_argument('--n_words', type=int, default=50000)
+parser.add_argument('--n_words', type=int, default=20000)
 parser.add_argument('--n_chars', type=int, default=100)
 parser.add_argument('--word_dim', type=int, default=300)
 parser.add_argument('--char_dim', type=int, default=64)
-parser.add_argument('--n_filters', type=int, default=128)
+parser.add_argument('--n_filters', type=int, default=64)
 parser.add_argument('--n_prop', type=int, default=50)
-parser.add_argument('-e', '--epochs', type=int, default=10)
 parser.add_argument('--batch_size', type=int, default=64)
 parser.add_argument('-k', '--top_k', type=int, default=5)
+parser.add_argument('-e', '--epochs', type=int, default=10)
+parser.add_argument('-b', '--baseline', type=bool, default=False)
 parser.add_argument('--lr', type=float, default=0.01, metavar='LR',
                     help='learning rate (default: 0.01)')
-parser.add_argument('-b', '--baseline', type=bool, default=False)
 args = parser.parse_args()
 
 def train(epoch, net, optimizer):
   print('Epoch: {}'.format(epoch))
   net.train()
   losses = []
-  margin = MarginLoss(margin = 0.5)
+  margin = MarginLoss()
   for loop, (batch_x, batch_pos, batch_neg) in data_generator.batch_iterator(args.data, args.batch_size):
     pred_pos = net(batch_pos)
     pred_neg = net(batch_neg)
