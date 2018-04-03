@@ -54,14 +54,20 @@ def test(net, data = '../data/eclipse/', threshold = 5):
   test_pairs = read_data(os.path.join(data, 'test.txt'))
   cosine = nn.CosineSimilarity(dim = 0, eps= 1e-6)
   recall = 0.
-  for idx in test_pairs:
-    print(idx)
+  loop = tqdm(range(len(test_pairs)))
+  for i in loop:
+    idx = test_pairs[i]
     query = idx[0]
     match = idx[1]
     top_k = {}
     samples = random.sample(features.keys(), 100)
     while query in samples:
         samples = random.sample(features.keys(), 100)
+    query_ = features[query].expand(100,128)
+    samples_ = torch.stack([features[k] for k in samples])
+    cos_ = cosine(query_, samples_)
+    topk = sorted(cos_.data)[-threshold:]
+    '''
     for k in samples:
       if query not in features.keys():
           continue
@@ -71,11 +77,11 @@ def test(net, data = '../data/eclipse/', threshold = 5):
     topk = sorted(top_k.values())
     topk = topk[-threshold:]
     candidates = [inv_map[x] for x in topk]
-    true_score = cosine(features[query], features[match]).data[0]
-    '''
     if match in candidates:
-        recall += 1
+      recall += 1
+
     '''
+    true_score = cosine(features[query], features[match]).data[0]
     if true_score > min(topk):
         recall += 1
   return recall/len(test_pairs)
