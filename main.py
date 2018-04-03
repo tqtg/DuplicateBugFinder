@@ -38,7 +38,7 @@ def train(epoch, net, optimizer):
     optimizer.step()
       
 
-def export(net, data='../data/eclipse/'):
+def export(net, data):
   bug_ids = read_bug_ids(data)
   feature = {}
 
@@ -49,7 +49,7 @@ def export(net, data='../data/eclipse/'):
   torch.save(feature, str(args.net) + '_feature.t7')
 
 
-def test(data = '../data/eclipse/', top_k):
+def test(data, top_k):
   features = torch.load(str(args.net) + '_feature.t7')
   test_pairs = read_test_data(os.path.join(data, 'test.txt'))
   cosine_batch = nn.CosineSimilarity(dim=1, eps=1e-6)
@@ -104,8 +104,8 @@ def main():
 
   torch.save(net, str(args.net) + '_checkpoint.t7')
   
-  export(net)
-  print(test(args.top_k))
+  export(net, args.data)
+  print(test(args.data, args.top_k))
   
 if __name__ == "__main__":
   main()
