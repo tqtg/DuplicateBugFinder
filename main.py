@@ -51,7 +51,7 @@ def export(net, data='../data/eclipse/'):
 
 def test(net, data = '../data/eclipse/', threshold = 5):
   features = torch.load('feature.t7')
-  test_pairs = read_data(os.path.join(data, 'test.txt'))[:2]
+  test_pairs = read_data(os.path.join(data, 'test.txt'))
   cosine = nn.CosineSimilarity(dim = 0, eps= 1e-6)
   recall = 0.
   for idx in test_pairs:
@@ -71,7 +71,12 @@ def test(net, data = '../data/eclipse/', threshold = 5):
     topk = sorted(top_k.values())
     topk = topk[-threshold:]
     candidates = [inv_map[x] for x in topk]
+    true_score = cosine(features[query], features[match]).data[0]
+    '''
     if match in candidates:
+        recall += 1
+    '''
+    if true_score > min(topk):
         recall += 1
   return recall/len(test_pairs)
 
@@ -82,9 +87,9 @@ def main():
   '''
   for epoch in range(1, args.epochs + 1):
     train(epoch, net, optimizer)
-  torch.save(net.module, 'checkpoint.t7')
-  export(net)
   '''
+  #torch.save(net, 'checkpoint.t7')
+  #export(net)
   print(test(net))
   
 if __name__ == "__main__":
