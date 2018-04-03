@@ -1,6 +1,5 @@
 import argparse
 
-import numpy as np
 import torch.optim as optim
 
 import baseline
@@ -28,15 +27,19 @@ args = parser.parse_args()
 def train(epoch, net, optimizer):
   print('Epoch: {}'.format(epoch))
   net.train()
+  losses = []
   margin = MarginLoss(margin = 0.5)
-  for batch_idx, (batch_x, batch_pos, batch_neg) in data_generator.batch_iterator(args.data, args.batch_size):
+  for loop, (batch_x, batch_pos, batch_neg) in data_generator.batch_iterator(args.data, args.batch_size):
     pred_pos = net(batch_pos)
     pred_neg = net(batch_neg)
     pred = net(batch_x)
     loss = margin(pred, pred_pos, pred_neg)
+    losses.append(loss.data[0])
+    loop.set_postfix(loss=loss.data[0])
     optimizer.zero_grad()
     loss.backward()
     optimizer.step()
+  return np.array(losses).mean()
       
 
 def export(net, data):
@@ -48,6 +51,7 @@ def export(net, data):
   if len(bug_ids) % batch_size > 0:
     num_batch += 1
   loop = tqdm(range(num_batch))
+  loop.set_description('Exporting')
   for i in loop:
     batch_ids = []
     for j in range(batch_size):
@@ -58,30 +62,22 @@ def export(net, data):
     batch_features = net(read_batch_bugs(batch_ids, data, test=True))
     for bug_id, feature in zip(batch_ids, batch_features):
       features[bug_id] = feature
+  return features
 
-  torch.save(features, str(args.net) + '_features.t7')
 
-
-def test(data, top_k):
-  features = torch.load(str(args.net) + '_features.t7')
-  test_pairs = read_test_data(os.path.join(data, 'test.txt'))
+def test(data, top_k, features=None):
+  if not features:
+    features = torch.load(str(args.net) + '_features.t7')
   cosine_batch = nn.CosineSimilarity(dim=1, eps=1e-6)
   recall = []
+  samples_ = torch.stack(features.values())
+  test_pairs = read_test_data(os.path.join(data, 'test.txt'))
   loop = tqdm(range(len(test_pairs)))
-  samples_ = torch.stack([features[k] for k in features.keys()])
-
+  loop.set_description('Testing')
   for i in loop:
-    recall_ = 0.
     idx = test_pairs[i]
     query = idx[0]
     ground_truth = idx[1]
-
-    '''
-    samples = random.sample(features.keys(), 100)
-    #samples = [x for x in features.keys() if x != query]
-    while query in samples:
-        samples = random.sample(features.keys(), 100)
-    '''
 
     query_ = features[query].expand(samples_.size(0), 128)
     cos_ = cosine_batch(query_, samples_)
@@ -89,18 +85,9 @@ def test(data, top_k):
     (_, indices) = torch.topk(cos_, k = top_k)
     candidates = [features.keys()[x.data[0]] for x in indices]
 
-    for m in candidates:
-      if m in ground_truth:
-        recall_ += 1
-
-    r = float(recall_ / len(ground_truth))
+    num_corrects = len(set(candidates) & set(ground_truth))
+    r = float(num_corrects / len(ground_truth))
     recall.append(r)
-    '''
-    true_score = cosine(features[query], features[ground_truth]).data[0]
-    if true_score > min(topk):
-        recall += 1
-    recall /= len(test_pairs)
-    '''
   return np.array(recall).mean()
 
 
@@ -115,12 +102,21 @@ def main():
 
   if not os.path.exists(str(args.net) + '_checkpoint.t7'):
     optimizer = optim.Adam(net.parameters(), lr=args.lr)
+    best_recall = 0
+    best_epoch = 0
     for epoch in range(1, args.epochs + 1):
-      train(epoch, net, optimizer)
-    torch.save(net, str(args.net) + '_checkpoint.t7')
-  if not os.path.exists(str(args.net) + '_features.t7'):
-    export(net, args.data)
-  print('{:.4f}'.format(test(args.data, args.top_k)))
-  
+      loss = train(epoch, net, optimizer)
+      features = export(net, args.data)
+      recall = test(args.data, args.top_k, features)
+      print('Loss={:.4f}, Recall@{}={:.4f}'.format(loss, args.top_k, recall))
+      if recall > best_recall:
+        best_recall = recall
+        best_epoch = epoch
+        torch.save(net, str(args.net) + '_checkpoint.t7')
+        torch.save(features, str(args.net) + '_features.t7')
+    print('Best_epoch={}, Best_recall={:.4f}'. format(best_epoch, best_recall))
+  print('Final recall@{}={:.4f}'.format(args.top_k, test(args.data, args.top_k)))
+
+
 if __name__ == "__main__":
   main()

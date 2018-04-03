@@ -4,7 +4,6 @@ import json
 import os
 import random
 import re
-import string
 from collections import defaultdict
 
 import nltk
@@ -45,21 +44,11 @@ def read_pairs():
 
 
 def normalize_text(text):
-  exclude = set(string.punctuation)
   try:
-    text = ''.join(ch for ch in text if ch not in exclude)
-    text = re.sub(r"\{+", "!", text)
-    text = re.sub(r"\}+", " ", text)
-    text = re.sub(r"\(+", " ", text)
-    text = re.sub(r"\)+", " ", text)
-    text = re.sub(r"\[+", " ", text)
-    text = re.sub(r"\]+", " ", text)
-    text = re.sub(r"\n+", " ", text)
-    text = re.sub(r"\t+", " ", text)
+    text = ' '.join(re.compile(r'\W+', re.UNICODE).split(text))
   except:
     text = 'description'
   return ' '.join([word.lower() for word in nltk.word_tokenize(text)])
-
 
 def save_dict(set, filename):
   with open(os.path.join(args.data, filename), 'w') as f:
@@ -104,6 +93,7 @@ def normalized_data(bug_ids):
       components.add(bug['component'])
       bug_statuses.add(bug['bug_status'])
 
+      bug.pop('_id', None)
       bug.pop('delta_ts', None)
       bug.pop('creation_ts', None)
 
@@ -144,6 +134,7 @@ def data_spit(bug_pairs):
 
 
 def build_freq_dict(train_text):
+  print('building frequency dictionaries')
   word_freq = defaultdict(int)
   char_freq = defaultdict(int)
   for text in tqdm(train_text):
@@ -154,31 +145,26 @@ def build_freq_dict(train_text):
   return word_freq, char_freq
 
 
-def build_vocabulary(train_text):
-  print('building vocabulary...')
-  word_freq, char_freq = build_freq_dict(train_text)
-
-  top_words = sorted(word_freq.items(), key=lambda x: -x[1])[:args.word_vocab - 2]
-  print('most common word is %s which appears %d times' % (top_words[0][0], top_words[0][1]))
-  print('less common word is %s which appears %d times' % (top_words[-1][0], top_words[-1][1]))
-  word_vocab = {}
+def save_vocab(freq_dict, vocab_size, filename):
+  top_tokens = sorted(freq_dict.items(), key=lambda x: -x[1])[:vocab_size - 2]
+  print('most common token is %s which appears %d times' % (top_tokens[0][0], top_tokens[0][1]))
+  print('less common token is %s which appears %d times' % (top_tokens[-1][0], top_tokens[-1][1]))
+  vocab = {}
   i = 2  # 0-index is for padding, 1-index is for UNKNOWN
-  for word, freq in top_words:
-    word_vocab[word] = i
+  for j in range(len(top_tokens)):
+    vocab[top_tokens[j][0]] = i
     i += 1
-  with open(os.path.join(args.data, 'word_vocab.pkl'), 'wb') as f:
-    pickle.dump(word_vocab, f)
+  with open(os.path.join(args.data, filename), 'wb') as f:
+    pickle.dump(vocab, f)
+  return vocab
 
-  top_chars = sorted(char_freq.items(), key=lambda x: -x[1])[:args.char_vocab - 2]
-  print('most common char is %s which appears %d times' % (top_chars[0][0], top_chars[0][1]))
-  print('less common char is %s which appears %d times' % (top_chars[-1][0], top_chars[-1][1]))
-  char_vocab = {}
-  i = 2
-  for char, freq in top_chars:
-    char_vocab[char] = i
-    i += 1
-  with open(os.path.join(args.data, 'char_vocab.pkl'), 'wb') as f:
-    pickle.dump(char_vocab, f)
+
+def build_vocabulary(train_text):
+  word_freq, char_freq = build_freq_dict(train_text)
+  print('word vocabulary')
+  word_vocab = save_vocab(word_freq, args.word_vocab, 'word_vocab.pkl')
+  print('character vocabulary')
+  char_vocab = save_vocab(char_freq, args.char_vocab, 'char_vocab.pkl')
   return word_vocab, char_vocab
 
 

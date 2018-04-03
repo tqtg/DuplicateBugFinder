@@ -1,18 +1,16 @@
 import torch.nn as nn
 import torch.nn.functional as F
-from data_generator import *
-import torch.nn as nn
-import torch.nn.functional as F
 
 from data_generator import *
+from utils import load_emb_matrix
 
 
 class BaseNet(torch.nn.Module):
   def __init__(self, args):
     super(BaseNet, self).__init__()
     self.word_embed = nn.Embedding(args.n_words, args.word_dim)
-    #emb_matrix = load_emb_matrix(args.n_words, args.word_dim, args.data)
-    #self.word_embed.weight = nn.Parameter(torch.from_numpy(emb_matrix).float())
+    emb_matrix = load_emb_matrix(args.n_words, args.word_dim, args.data)
+    self.word_embed.weight = nn.Parameter(torch.from_numpy(emb_matrix).float())
 
     self.word_conv3 = nn.Conv1d(args.word_dim, args.n_filters, 3)
     self.word_conv4 = nn.Conv1d(args.word_dim, args.n_filters, 4)
