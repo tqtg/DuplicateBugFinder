@@ -50,7 +50,6 @@ def read_batch_bugs(batch_bugs, data, test = False):
   short_desc_word = Variable(torch.from_numpy(data_padding(short_desc_word)), volatile = test).cuda()
   short_desc_char = Variable(torch.from_numpy(data_padding(short_desc_char)), volatile = test).cuda()
 
-  # info = Variable(torch.from_numpy(np.random.rand(sz, 50)), volatile = test).cuda()
   info = Variable(torch.FloatTensor(sz, 50).fill_(0), volatile = test).cuda()
 
   batch_bugs = dict()
@@ -74,7 +73,16 @@ def read_batch_triplets(batch_triplets, data):
          read_batch_bugs(batch_neg_bugs, data)
 
 
-def read_data(data_file):
+def read_test_data(data_file):
+  data = []
+  with open(data_file, 'r') as f:
+    for line in f:
+      tokens = line.strip().split()
+      data.append([int(tokens[0]), [int(bug) for bug in tokens[1:]]])
+  return data
+
+
+def read_train_data(data_file):
   data = []
   with open(data_file, 'r') as f:
     for line in f:
@@ -88,7 +96,7 @@ train_data = None
 def batch_iterator(data, batch_size):
   global train_data
   if not train_data:
-    train_data = read_data(os.path.join(data, 'train.txt'))
+    train_data = read_train_data(os.path.join(data, 'train.txt'))
   random.shuffle(train_data)
   bug_ids = read_bug_ids(data)
   num_batches = int(len(train_data) / batch_size)

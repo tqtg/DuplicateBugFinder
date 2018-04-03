@@ -193,7 +193,9 @@ def dump_bugs(word_vocab, char_vocab):
   component_dict = load_dict('component.dic')
   bug_status_dict = load_dict('bug_status.dic')
   with open(os.path.join(args.data, 'normalized_bugs.json'), 'r') as f:
-    for line in f:
+    loop = tqdm(f)
+    for line in loop:
+      loop.set_description('Data dumping')
       bug = json.loads(line)
       bug['product'] = product_dict[bug['product']]
       bug['bug_severity'] = bug_severity_dict[bug['bug_severity']]
