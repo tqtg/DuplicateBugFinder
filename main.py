@@ -1,7 +1,6 @@
 import argparse
 
 import torch.optim as optim
-from tqdm import tqdm
 
 import baseline
 import data_generator
@@ -21,7 +20,7 @@ parser.add_argument('-e', '--epochs', type=int, default=10)
 parser.add_argument('--batch_size', type=int, default=64)
 parser.add_argument('--lr', type=float, default=0.01, metavar='LR',
                     help='learning rate (default: 0.01)')
-parser.add_argument('--net', type=str, default='base')
+parser.add_argument('-b', '--baseline', type=bool, default=False)
 args = parser.parse_args()
 
 def train(epoch, net, optimizer):
@@ -91,18 +90,20 @@ def test(data = '../data/eclipse/', threshold = 25):
 
 
 def main():
-  if str(args.net) == 'base':
+  if args.baseline:
     net = baseline.BaseNet(args)
+    args.net = 'base'
   else:
     net = proposed.Net(args)
+    args.net = 'proposed'
   net.cuda()
   optimizer = optim.Adam(net.parameters(), lr=args.lr)
   for epoch in range(1, args.epochs + 1):
     train(epoch, net, optimizer)
-  
+
   torch.save(net, str(args.net) + '_checkpoint.t7')
   
-  # export(net)
+  export(net)
   print(test())
   
 if __name__ == "__main__":
