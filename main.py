@@ -18,6 +18,7 @@ parser.add_argument('--n_filters', type=int, default=128)
 parser.add_argument('--n_prop', type=int, default=50)
 parser.add_argument('-e', '--epochs', type=int, default=10)
 parser.add_argument('--batch_size', type=int, default=64)
+parser.add_argument('-k', '--top_k', type=int, default=5)
 parser.add_argument('--lr', type=float, default=0.01, metavar='LR',
                     help='learning rate (default: 0.01)')
 parser.add_argument('-b', '--baseline', type=bool, default=False)
@@ -48,7 +49,7 @@ def export(net, data='../data/eclipse/'):
   torch.save(feature, str(args.net) + '_feature.t7')
 
 
-def test(data = '../data/eclipse/', threshold = 25):
+def test(data = '../data/eclipse/', top_k):
   features = torch.load(str(args.net) + '_feature.t7')
   test_pairs = read_test_data(os.path.join(data, 'test.txt'))
   cosine_batch = nn.CosineSimilarity(dim=1, eps=1e-6)
@@ -72,7 +73,7 @@ def test(data = '../data/eclipse/', threshold = 25):
     query_ = features[query].expand(samples_.size(0), 128)
     cos_ = cosine_batch(query_, samples_)
 
-    (_, indices) = torch.topk(cos_, k = threshold)
+    (_, indices) = torch.topk(cos_, k = top_k)
     candidates = [features.keys()[x.data[0]] for x in indices]
 
     for m in candidates:
@@ -104,7 +105,7 @@ def main():
   torch.save(net, str(args.net) + '_checkpoint.t7')
   
   export(net)
-  print(test())
+  print(test(args.top_k))
   
 if __name__ == "__main__":
   main()
