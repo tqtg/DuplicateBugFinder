@@ -1,7 +1,7 @@
 import cPickle as pickle
 import os
 import random
-import pdb
+
 import numpy as np
 import torch
 from torch.autograd import Variable
@@ -50,7 +50,8 @@ def read_batch_bugs(batch_bugs, data, test = False):
   short_desc_word = Variable(torch.from_numpy(data_padding(short_desc_word)), volatile = test).cuda()
   short_desc_char = Variable(torch.from_numpy(data_padding(short_desc_char)), volatile = test).cuda()
 
-  info = Variable(torch.from_numpy(np.random.rand(sz, 50)), volatile = test).cuda()
+  # info = Variable(torch.from_numpy(np.random.rand(sz, 50)), volatile = test).cuda()
+  info = Variable(torch.FloatTensor(sz, 50).fill_(0), volatile = test).cuda()
 
   batch_bugs = dict()
   batch_bugs['info'] = info
@@ -77,7 +78,7 @@ def read_data(data_file):
   data = []
   with open(data_file, 'r') as f:
     for line in f:
-      bug1, bug2 = line.split()
+      bug1, bug2 = line.strip().split()
       data.append([int(bug1), int(bug2)])
   return data
 

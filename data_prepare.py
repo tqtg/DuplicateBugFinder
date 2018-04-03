@@ -4,6 +4,7 @@ import json
 import os
 import random
 import re
+import string
 from collections import defaultdict
 
 import nltk
@@ -11,7 +12,7 @@ from tqdm import tqdm
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--data', type=str, default='../data/eclipse')
-parser.add_argument('-r', '--ratio', type=float, default=0.8)
+parser.add_argument('-r', '--ratio', type=float, default=0.9)
 parser.add_argument('-wv', '--word_vocab', type=int, default=50000)
 parser.add_argument('-cv', '--char_vocab', type=int, default=100)
 args = parser.parse_args()
@@ -23,7 +24,12 @@ def read_pairs():
   bug_pairs = []
   bug_ids = set()
   with open(os.path.join(args.data, 'pairs.json'), 'r') as f:
+    count = 0
     for line in f:
+      count += 1
+      if count > 10000:
+        break
+
       pair = json.loads(line)
       bug_pairs.append((int(pair['bug1']), int(pair['bug2'])))
       bug_ids.add(int(pair['bug1']))
@@ -39,10 +45,19 @@ def read_pairs():
 
 
 def normalize_text(text):
-  text = re.sub(r"!+", "!", text)
-  text = re.sub(r"\.+", ".", text)
-  text = re.sub(r"\\n", " ", text)
-  text = re.sub(r"\\t", " ", text)
+  exclude = set(string.punctuation)
+  try:
+    text = ''.join(ch for ch in text if ch not in exclude)
+    text = re.sub(r"\{+", "!", text)
+    text = re.sub(r"\}+", " ", text)
+    text = re.sub(r"\(+", " ", text)
+    text = re.sub(r"\)+", " ", text)
+    text = re.sub(r"\[+", " ", text)
+    text = re.sub(r"\]+", " ", text)
+    text = re.sub(r"\n+", " ", text)
+    text = re.sub(r"\t+", " ", text)
+  except:
+    text = 'description'
   return ' '.join([word.lower() for word in nltk.word_tokenize(text)])
 
 
@@ -61,26 +76,26 @@ def load_dict(filename):
   return dict
 
 
-def normalized_data(bug_ids, train_bug_ids):
+def normalized_data(bug_ids):
   products = set()
   bug_severities = set()
   priorities = set()
   versions = set()
   components = set()
   bug_statuses = set()
-  train_text = []
+  text = []
   normalized_bugs = open(os.path.join(args.data, 'normalized_bugs.json'), 'w')
   with open(os.path.join(args.data, 'bugs.json'), 'r') as f:
     count = 0
-    for line in tqdm(f):
-      count += 1
-      if count == 500:
-        break
-
+    loop = tqdm(f)
+    for line in loop:
       bug = json.loads(line)
       bug_id = int(bug["bug_id"])
       if bug_id not in bug_ids:
         continue
+
+      count += 1
+      loop.set_postfix(valid_count=count)
 
       products.add(bug['product'])
       bug_severities.add(bug['bug_severity'])
@@ -98,31 +113,34 @@ def normalized_data(bug_ids, train_bug_ids):
       else:
         bug['short_description'] = ''
       normalized_bugs.write('{}\n'.format(json.dumps(bug)))
-      if bug_id in train_bug_ids:
-        train_text.append(bug['description'])
-        train_text.append(bug['short_description'])
+
+      text.append(bug['description'])
+      text.append(bug['short_description'])
   save_dict(products, 'product.dic')
   save_dict(bug_severities, 'bug_severity.dic')
   save_dict(priorities, 'priority.dic')
   save_dict(versions, 'version.dic')
   save_dict(components, 'component.dic')
   save_dict(bug_statuses, 'bug_status.dic')
-  return train_text
+  return text
 
 
 def data_spit(bug_pairs):
   random.shuffle(bug_pairs)
   split_idx = int(len(bug_pairs) * args.ratio)
-  train_bug_ids = set()
   with open(os.path.join(args.data, 'train.txt'), 'w') as f:
     for pair in bug_pairs[:split_idx]:
       f.write("%d %d\n" % pair)
-      train_bug_ids.add(int(pair[0]))
-      train_bug_ids.add(int(pair[1]))
+  test_data = {}
+  for pair in bug_pairs[split_idx:]:
+    bug1 = int(pair[0])
+    bug2 = int(pair[1])
+    if bug1 not in test_data:
+      test_data[bug1] = set()
+    test_data[bug1].add(bug2)
   with open(os.path.join(args.data, 'test.txt'), 'w') as f:
-    for pair in bug_pairs[split_idx:]:
-      f.write("%d %d\n" % pair)
-  return train_bug_ids
+    for bug in test_data.keys():
+      f.write("{} {}\n".format(bug, ' '.join([str(x) for x in test_data[bug]])))
 
 
 def build_freq_dict(train_text):
@@ -200,11 +218,10 @@ def main():
   print("Number of bugs: {}".format(len(bug_ids)))
   print("Number of pairs: {}".format(len(bug_pairs)))
 
-  train_bug_ids = data_spit(bug_pairs)
-  train_text = normalized_data(bug_ids, train_bug_ids)
-  print("Number of train docs: {}".format(len(train_text)))
+  data_spit(bug_pairs)
+  text = normalized_data(bug_ids)
 
-  word_vocab, char_vocab = build_vocabulary(train_text)
+  word_vocab, char_vocab = build_vocabulary(text)
   dump_bugs(word_vocab, char_vocab)
 
 
