@@ -61,9 +61,10 @@ def test(net, data = '../data/eclipse/', threshold = 5):
     match = idx[1]
     top_k = {}
     samples = random.sample(features.keys(), 100)
+    #samples = [x for x in features.keys() if x != query]
     while query in samples:
         samples = random.sample(features.keys(), 100)
-    query_ = features[query].expand(100,128)
+    query_ = features[query].expand(len(samples),128)
     samples_ = torch.stack([features[k] for k in samples])
     cos_ = cosine(query_, samples_)
     topk = sorted(cos_.data)[-threshold:]
