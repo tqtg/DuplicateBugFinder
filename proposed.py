@@ -14,12 +14,10 @@ class Net(torch.nn.Module):
 
     self.charRNN = nn.GRU(input_size=args.char_dim, hidden_size=50, bidirectional=True, batch_first=True)
     self.wordRNN = nn.GRU(input_size=args.word_dim, hidden_size=50, bidirectional=True, batch_first=True)
-
-    # self.prop_MLP = nn.Sequential(nn.Linear(args.n_prop, 256), nn.ReLU(),
-    #                             nn.Linear(256, 128), nn.ReLU())
-    # self.projection = nn.Linear(args.n_filters * 6  + 128, 128)
-    self.prop_MLP = nn.Sequential(nn.Linear(args.n_prop, 100), nn.ReLU())
+    self.info_proj = nn.Sequential(nn.Linear(args.n_prop, 100), nn.Tanh())
+    self.text_proj = nn.Sequential(nn.Linear(400, 400), nn.Tanh(), nn.Linear(400, 400))
     self.projection = nn.Linear(500, 100)
+
 
   def forward_rnn(self, x):
     # x = [word, char]
@@ -37,11 +35,13 @@ class Net(torch.nn.Module):
     info = x['info']
     desc = x['desc']
     short_desc = x['short_desc']
-    long_desc = x['long_desc']
 
     word_short, char_short = self.forward_rnn(short_desc)
-    word_long, char_long = self.forward_rnn(long_desc)
-    prop_feature = self.prop_MLP(info.float())
-    feat = torch.cat([word_short, char_short, word_long, char_long, prop_feature], -1)
-    feature = self.projection(feat)
-    return feature
+    word_long, char_long = self.forward_rnn(desc)
+    text_feature = torch.cat([word_short, char_short, word_long, char_long], -1)
+    text_residual = text_feature + self.text_proj(text_feature)
+
+    info_feature = self.info_proj(info.float())
+
+    feature = torch.cat([text_residual, info_feature], -1)
+    return self.projection(feature)

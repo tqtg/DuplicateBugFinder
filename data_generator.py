@@ -32,6 +32,8 @@ def get_neg_bug(invalid_bugs, bug_ids):
 
 def data_padding(data, max_seq_length):
   max_seq_length = min(max([len(seq) for seq in data]), max_seq_length)
+  if max_seq_length < 6:
+    max_seq_length = 6
   padded_data = np.zeros(shape=[len(data), max_seq_length])
   for i, seq in enumerate(data):
     seq = seq[:max_seq_length]
@@ -62,8 +64,8 @@ def read_batch_bugs(batch_bugs, data, test=False):
     info.append(info_)
   desc_word = Variable(torch.from_numpy(data_padding(desc_word, 500)), volatile=test).cuda()
   short_desc_word = Variable(torch.from_numpy(data_padding(short_desc_word, 100)), volatile=test).cuda()
-  desc_char = Variable(torch.from_numpy(data_padding(desc_char, 10)), volatile=test).cuda()
-  short_desc_char = Variable(torch.from_numpy(data_padding(short_desc_char, 10)), volatile=test).cuda()
+  desc_char = Variable(torch.from_numpy(data_padding(desc_char, 2000)), volatile=test).cuda()
+  short_desc_char = Variable(torch.from_numpy(data_padding(short_desc_char, 400)), volatile=test).cuda()
   info = Variable(torch.from_numpy(np.array(info)), volatile=test).cuda()
   batch_bugs = dict()
   batch_bugs['info'] = info
@@ -86,23 +88,26 @@ def read_batch_triplets(batch_triplets, data):
          read_batch_bugs(batch_neg_bugs, data)
 
 
-def read_test_data(data_file):
-  data = []
-  with open(data_file, 'r') as f:
+def read_test_data(data):
+  test_data = []
+  bug_ids = set()
+  with open(os.path.join(data, 'test.txt'), 'r') as f:
     for line in f:
       tokens = line.strip().split()
-      data.append([int(tokens[0]), [int(bug) for bug in tokens[1:]]])
-  return data
+      test_data.append([int(tokens[0]), [int(bug) for bug in tokens[1:]]])
+      for token in tokens:
+        bug_ids.add(int(token))
+  return test_data, list(bug_ids)
 
 
-def read_train_data(data_file):
+def read_train_data(data):
   data_pairs = []
   data_dup_sets = {}
-  with open(data_file, 'r') as f:
+  with open(os.path.join(data, 'train.txt'), 'r') as f:
     for line in f:
       bug1, bug2 = line.strip().split()
       data_pairs.append([int(bug1), int(bug2)])
-      if int(bug1) not in data_dup_sets:
+      if int(bug1) not in data_dup_sets.keys():
         data_dup_sets[int(bug1)] = set()
       data_dup_sets[int(bug1)].add(int(bug2))
   return data_pairs, data_dup_sets
@@ -111,11 +116,11 @@ def read_train_data(data_file):
 train_data = None
 dup_sets = None
 
-def batch_iterator(data, batch_size):
+def batch_iterator(data, batch_size, n_neg):
   global train_data
   global dup_sets
   if not train_data:
-    train_data, dup_sets = read_train_data(os.path.join(data, 'train.txt'))
+    train_data, dup_sets = read_train_data(data)
   random.shuffle(train_data)
   bug_ids = read_bug_ids(data)
   num_batches = int(len(train_data) / batch_size)
@@ -129,7 +134,7 @@ def batch_iterator(data, batch_size):
       offset = batch_size * i + j
       if offset >= len(train_data):
         break
-      neg_bug = get_neg_bug(dup_sets[train_data[offset][0]], bug_ids)
-      train_data[offset].append(neg_bug)
-      batch_triplets.append(train_data[offset])
+      for i in range(n_neg):
+        neg_bug = get_neg_bug(dup_sets[train_data[offset][0]], bug_ids)
+        batch_triplets.append([train_data[offset][0], train_data[offset][1], neg_bug])
     yield loop, read_batch_triplets(batch_triplets, data)

@@ -6,6 +6,7 @@ import random
 import re
 from collections import defaultdict
 from tqdm import tqdm
+import nltk
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--data', type=str, default='../data/eclipse')
@@ -41,11 +42,21 @@ def read_pairs():
   return bug_pairs, bug_ids
 
 
+def func_name_tokenize(text):
+  s = []
+  for i, c in enumerate(text):
+    if c.isupper() and i > 0 and text[i-1].islower():
+      s.append(' ')
+    s.append(c)
+  return ''.join(s).strip()
+
+
 def normalize_text(text):
   try:
-    text = ' '.join(re.compile(r'\W+', re.UNICODE).split(text))
-    text = re.sub(r'[0-9]+', 'number', text)
-    return text.lower()
+    tokens = re.compile(r'[\W_]+', re.UNICODE).split(text)
+    text = ' '.join([func_name_tokenize(token) for token in tokens])
+    text = re.sub(r'\d+((\s\d+)+)?', ' number ', text)
+    return ' '.join([word.lower() for word in nltk.word_tokenize(text)])
   except:
     return 'description'
 
@@ -113,7 +124,7 @@ def normalized_data(bug_ids):
   return text
 
 
-def data_spit(bug_pairs):
+def data_split(bug_pairs):
   random.shuffle(bug_pairs)
   split_idx = int(len(bug_pairs) * args.ratio)
   with open(os.path.join(args.data, 'train.txt'), 'w') as f:
@@ -204,7 +215,7 @@ def main():
   print("Number of bugs: {}".format(len(bug_ids)))
   print("Number of pairs: {}".format(len(bug_pairs)))
 
-  data_spit(bug_pairs)
+  data_split(bug_pairs)
   text = normalized_data(bug_ids)
 
   word_vocab, char_vocab = build_vocabulary(text)
@@ -213,5 +224,3 @@ def main():
 
 if __name__ == '__main__':
   main()
-
-

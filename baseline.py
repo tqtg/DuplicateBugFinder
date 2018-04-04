@@ -18,7 +18,7 @@ class BaseNet(torch.nn.Module):
     self.desc_proj = nn.Sequential(nn.Linear(args.n_filters * 3, 100), nn.Tanh())
     self.short_desc = torch.nn.GRU(input_size=args.word_dim, hidden_size=50, bidirectional=True, batch_first=True)
     self.prop_MLP = nn.Sequential(nn.Linear(args.n_prop, 100), nn.Tanh())
-    self.projection = nn.Linear(300, args.feature_dim)
+    self.projection = nn.Linear(300, 100)
 
 
   def forward(self, x):

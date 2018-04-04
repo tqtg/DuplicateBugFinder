@@ -17,12 +17,12 @@ parser.add_argument('--char_dim', type=int, default=64)
 parser.add_argument('--n_filters', type=int, default=64)
 parser.add_argument('--n_prop', type=int, default=651)
 parser.add_argument('--batch_size', type=int, default=64)
+parser.add_argument('--n_neg', type=int, default=1)
 parser.add_argument('-k', '--top_k', type=int, default=5)
 parser.add_argument('-e', '--epochs', type=int, default=10)
 parser.add_argument('-b', '--baseline', type=bool, default=False)
-parser.add_argument('-f', '--feature_dim', type=int, default=100)
 parser.add_argument('--lr', type=float, default=1e-3, metavar='LR',
-                    help='learning rate (default: 0.01)')
+                    help='learning rate (default: 1e-3)')
 args = parser.parse_args()
 
 
@@ -31,7 +31,7 @@ def train(epoch, net, optimizer):
   net.train()
   losses = []
   margin = MarginLoss(margin=1.0)
-  for loop, (batch_x, batch_pos, batch_neg) in data_generator.batch_iterator(args.data, args.batch_size):
+  for loop, (batch_x, batch_pos, batch_neg) in data_generator.batch_iterator(args.data, args.batch_size, args.n_neg):
     pred_pos = net(batch_pos)
     pred_neg = net(batch_neg)
     pred = net(batch_x)
@@ -45,7 +45,7 @@ def train(epoch, net, optimizer):
 
 
 def export(net, data):
-  bug_ids = read_bug_ids(data)
+  _, bug_ids = read_test_data(data)
   features = {}
 
   batch_size = 64
@@ -71,26 +71,27 @@ def test(data, top_k, features=None):
   if not features:
     features = torch.load(str(args.net) + '_features.t7')
   cosine_batch = nn.CosineSimilarity(dim=1, eps=1e-6)
-  recall = []
+  corrects = 0
+  total = 0
   samples_ = torch.stack(features.values())
-  test_pairs = read_test_data(os.path.join(data, 'test.txt'))
-  loop = tqdm(range(len(test_pairs)))
+  test_data, _ = read_test_data(data)
+  loop = tqdm(range(len(test_data)))
   loop.set_description('Testing')
   for i in loop:
-    idx = test_pairs[i]
+    idx = test_data[i]
     query = idx[0]
     ground_truth = idx[1]
 
-    query_ = features[query].expand(samples_.size(0), args.feature_dim)
+    query_ = features[query].expand(samples_.size(0), samples_.size(1))
     cos_ = cosine_batch(query_, samples_)
 
-    (_, indices) = torch.topk(cos_, k=top_k)
+    (_, indices) = torch.topk(cos_, k=top_k + 1)
     candidates = [features.keys()[x.data[0]] for x in indices]
 
-    num_corrects = len(set(candidates) & set(ground_truth))
-    r = float(num_corrects / len(ground_truth))
-    recall.append(r)
-  return np.array(recall).mean()
+    corrects += len(set(candidates) & set(ground_truth))
+    total += len(ground_truth)
+
+  return float(corrects) / total
 
 
 def main():
