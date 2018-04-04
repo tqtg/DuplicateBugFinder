@@ -1,4 +1,5 @@
 import argparse
+import sys
 
 import torch.optim as optim
 import baseline
@@ -23,6 +24,7 @@ parser.add_argument('--lr', type=float, default=0.01, metavar='LR',
                     help='learning rate (default: 0.01)')
 args = parser.parse_args()
 
+
 def train(epoch, net, optimizer):
   print('Epoch: {}'.format(epoch))
   net.train()
@@ -39,7 +41,7 @@ def train(epoch, net, optimizer):
     loss.backward()
     optimizer.step()
   return np.array(losses).mean()
-      
+
 
 def export(net, data):
   bug_ids = read_bug_ids(data)
@@ -81,7 +83,7 @@ def test(data, top_k, features=None):
     query_ = features[query].expand(samples_.size(0), 128)
     cos_ = cosine_batch(query_, samples_)
 
-    (_, indices) = torch.topk(cos_, k = top_k)
+    (_, indices) = torch.topk(cos_, k=top_k)
     candidates = [features.keys()[x.data[0]] for x in indices]
 
     num_corrects = len(set(candidates) & set(ground_truth))
@@ -92,29 +94,33 @@ def test(data, top_k, features=None):
 
 def main():
   if args.baseline:
-    net = baseline.BaseNet(args)
     args.net = 'base'
   else:
-    net = proposed.Net(args)
     args.net = 'proposed'
-  net.cuda()
 
-  if not os.path.exists(str(args.net) + '_checkpoint.t7'):
-    optimizer = optim.Adam(net.parameters(), lr=args.lr)
-    best_recall = 0
-    best_epoch = 0
-    for epoch in range(1, args.epochs + 1):
-      loss = train(epoch, net, optimizer)
-      features = export(net, args.data)
-      recall = test(args.data, args.top_k, features)
-      print('Loss={:.4f}, Recall@{}={:.4f}'.format(loss, args.top_k, recall))
-      if recall > best_recall:
-        best_recall = recall
-        best_epoch = epoch
-        torch.save(net, str(args.net) + '_checkpoint.t7')
-        torch.save(features, str(args.net) + '_features.t7')
-    print('Best_epoch={}, Best_recall={:.4f}'. format(best_epoch, best_recall))
-  print('Final recall@{}={:.4f}'.format(args.top_k, test(args.data, args.top_k)))
+  if os.path.exists(str(args.net) + '_features.t7'):
+    print('Final recall@{}={:.4f}'.format(args.top_k, test(args.data, args.top_k)))
+    sys.exit(0)
+
+  if args.net == 'base':
+    net = baseline.BaseNet(args)
+  else:
+    net = proposed.Net(args)
+  net.cuda()
+  optimizer = optim.Adam(net.parameters(), lr=args.lr)
+  best_recall = 0
+  best_epoch = 0
+  for epoch in range(1, args.epochs + 1):
+    loss = train(epoch, net, optimizer)
+    features = export(net, args.data)
+    recall = test(args.data, args.top_k, features)
+    print('Loss={:.4f}, Recall@{}={:.4f}'.format(loss, args.top_k, recall))
+    if recall > best_recall:
+      best_recall = recall
+      best_epoch = epoch
+      torch.save(net, str(args.net) + '_checkpoint.t7')
+      torch.save(features, str(args.net) + '_features.t7')
+  print('Best_epoch={}, Best_recall={:.4f}'.format(best_epoch, best_recall))
 
 
 if __name__ == "__main__":

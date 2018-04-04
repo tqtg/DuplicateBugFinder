@@ -27,7 +27,8 @@ def load_emb_matrix(vocab_size, emb_size, data):
   f.close()
   print('Total {} word vectors in Glove.'.format(len(embedding_weights)))
 
-  embedding_matrix = np.random.uniform(-1.0, 1.0, (vocab_size, emb_size))
+  embedding_matrix = np.random.uniform(-0.1, 0.1, (vocab_size, emb_size))
+  embedding_matrix[0, :] = np.zeros(emb_size)
 
   oov_count = 0
   vocab = load_vocabulary(data)

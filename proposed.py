@@ -34,7 +34,8 @@ class Net(torch.nn.Module):
     self.prop_MLP = nn.Sequential(nn.Linear(args.n_prop, 256), nn.ReLU(),
                                   nn.Linear(256, 128), nn.ReLU())
     self.projection = nn.Linear(args.n_filters * 6 , 128)
-  
+
+
   def forward_short(self, x):
     w_emb = self.word_embed(x[0]).transpose(1, 2)
     c_emb = self.char_embed(x[1]).transpose(1, 2)

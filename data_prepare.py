@@ -19,7 +19,7 @@ parser.add_argument('-wv', '--word_vocab', type=int, default=20000)
 parser.add_argument('-cv', '--char_vocab', type=int, default=100)
 args = parser.parse_args()
 
-UNK = 2
+UNK = 1
 
 
 def read_pairs():
@@ -51,7 +51,7 @@ def normalize_text(text):
     text = ' '.join(re.compile(r'\W+', re.UNICODE).split(text))
   except:
     text = 'description'
-  return ' '.join([ps.stem(word).lower() for word in nltk.word_tokenize(text)])
+  return ' '.join([word.lower() for word in nltk.word_tokenize(text)])
 
 
 def save_dict(set, filename):

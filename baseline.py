@@ -10,7 +10,7 @@ class BaseNet(torch.nn.Module):
     self.word_embed = nn.Embedding(args.n_words, args.word_dim, max_norm = 1)
     #emb_matrix = load_emb_matrix(args.n_words, args.word_dim, args.data)
     #self.word_embed.weight = nn.Parameter(torch.from_numpy(emb_matrix).float())
-
+    
     self.word_conv3 = nn.Conv1d(args.word_dim, args.n_filters, 3)
     self.word_conv4 = nn.Conv1d(args.word_dim, args.n_filters, 4)
     self.word_conv5 = nn.Conv1d(args.word_dim, args.n_filters, 5)
@@ -22,6 +22,10 @@ class BaseNet(torch.nn.Module):
     self.prop_MLP = nn.Sequential(nn.Linear(args.n_prop, 256), nn.ReLU(),
                                   nn.Linear(256, 128), nn.ReLU())
     self.projection = nn.Linear(args.n_filters * 3 + 50*2 + 128, 128)
+    
+    # self.prop_MLP = nn.Sequential(nn.Linear(args.n_prop, 256), nn.ReLU(),
+    #                               nn.Linear(256, 128), nn.ReLU())
+    self.projection = nn.Linear(args.n_filters * 3 + 50 * 2, 128)
 
 
   def forward(self, x):
@@ -43,6 +47,7 @@ class BaseNet(torch.nn.Module):
     out, hidden = self.short_desc(embedded_short_desc)
     
     short_desc_feature = torch.mean(out, dim=1)
+    
     feature = torch.cat([prop_feature, short_desc_feature, long_desc_feature], -1)
     #feature = torch.cat([short_desc_feature, long_desc_feature], -1)
     feature = self.projection(feature)
