@@ -5,12 +5,7 @@ import os
 import random
 import re
 from collections import defaultdict
-
-import nltk
-from nltk.stem import PorterStemmer
 from tqdm import tqdm
-
-ps = PorterStemmer()
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--data', type=str, default='../data/eclipse')
@@ -49,9 +44,10 @@ def read_pairs():
 def normalize_text(text):
   try:
     text = ' '.join(re.compile(r'\W+', re.UNICODE).split(text))
+    text = re.sub(r'[0-9]+', 'number', text)
+    return text.lower()
   except:
-    text = 'description'
-  return ' '.join([word.lower() for word in nltk.word_tokenize(text)])
+    return 'description'
 
 
 def save_dict(set, filename):
@@ -83,12 +79,12 @@ def normalized_data(bug_ids):
     loop = tqdm(f)
     for line in loop:
       bug = json.loads(line)
-      bug_id = int(bug["bug_id"])
+      bug_id = int(bug['bug_id'])
       if bug_id not in bug_ids:
         continue
 
       count += 1
-      loop.set_postfix(valid_count=count)
+      loop.set_postfix(count=count)
 
       products.add(bug['product'])
       bug_severities.add(bug['bug_severity'])
@@ -96,16 +92,14 @@ def normalized_data(bug_ids):
       versions.add(bug['version'])
       components.add(bug['component'])
       bug_statuses.add(bug['bug_status'])
-
-      bug.pop('_id', None)
-      bug.pop('delta_ts', None)
-      bug.pop('creation_ts', None)
-
       bug['description'] = normalize_text(bug['description'])
       if 'short_desc' in bug:
         bug['short_desc'] = normalize_text(bug['short_desc'])
       else:
         bug['short_desc'] = ''
+      bug.pop('_id', None)
+      bug.pop('delta_ts', None)
+      bug.pop('creation_ts', None)
       normalized_bugs.write('{}\n'.format(json.dumps(bug)))
 
       text.append(bug['description'])
