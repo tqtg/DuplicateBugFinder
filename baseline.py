@@ -3,7 +3,6 @@ import torch.nn.functional as F
 from data_generator import *
 from utils import load_emb_matrix
 
-
 class BaseNet(torch.nn.Module):
   def __init__(self, args):
     super(BaseNet, self).__init__()
@@ -23,9 +22,9 @@ class BaseNet(torch.nn.Module):
                                   nn.Linear(256, 128), nn.ReLU())
     self.projection = nn.Linear(args.n_filters * 3 + 50*2 + 128, 128)
     
-    # self.prop_MLP = nn.Sequential(nn.Linear(args.n_prop, 256), nn.ReLU(),
-    #                               nn.Linear(256, 128), nn.ReLU())
-    self.projection = nn.Linear(args.n_filters * 3 + 50 * 2, 128)
+    self.prop_MLP = nn.Sequential(nn.Linear(args.n_prop, 256), nn.ReLU(),
+                                   nn.Linear(256, 128), nn.ReLU())
+    self.projection = nn.Linear(args.n_filters * 3 + 50 * 2 + 128, 128)
 
 
   def forward(self, x):
