@@ -1,12 +1,17 @@
 import cPickle as pickle
 import os
 import random
-
 import numpy as np
 import torch
 from torch.autograd import Variable
 from tqdm import tqdm
 
+info_dict = {'bug_severity': 7, 'bug_status': 3, 'component': 323, 'priority': 5, 'product': 116, 'version': 197}
+
+def to_one_hot(idx, size):
+  one_hot = np.zeros(size)
+  one_hot[int(float(idx))] = 1
+  return one_hot
 
 def read_bug_ids(data):
   bug_ids = []
@@ -38,12 +43,21 @@ def read_batch_bugs(batch_bugs, data, test = False):
   desc_char = []
   short_desc_word = []
   short_desc_char = []
+  info = []
   for bug_id in batch_bugs:
     bug = pickle.load(open(os.path.join(data, 'bugs', '{}.pkl'.format(bug_id)), 'rb'))
     desc_word.append(bug['description_word'])
     desc_char.append(bug['description_char'])
     short_desc_word.append(bug['short_desc_word'])
     short_desc_char.append(bug['short_desc_char'])
+    info_ = np.concatenate((
+        to_one_hot(bug['bug_severity'], info_dict['bug_severity']),
+        to_one_hot(bug['bug_status'], info_dict['bug_status']),
+        to_one_hot(bug['component'], info_dict['component']),
+        to_one_hot(bug['priority'], info_dict['priority']),
+        to_one_hot(bug['product'], info_dict['product']),
+        to_one_hot(bug['version'], info_dict['version'])))
+    info.append(info_)
   sz = len(desc_word)
   desc_word = Variable(torch.from_numpy(data_padding(desc_word, 150)), volatile = test).cuda()
   desc_char = Variable(torch.from_numpy(data_padding(desc_char, 1500)), volatile = test).cuda()
@@ -51,8 +65,8 @@ def read_batch_bugs(batch_bugs, data, test = False):
   short_desc_word = Variable(torch.from_numpy(data_padding(short_desc_word, 15)), volatile = test).cuda()
   short_desc_char = Variable(torch.from_numpy(data_padding(short_desc_char, 150)), volatile = test).cuda()
 
-  info = Variable(torch.FloatTensor(sz, 50).fill_(0), volatile = test).cuda()
-
+  #info = Variable(torch.FloatTensor(sz, 50).fill_(0), volatile = test).cuda()
+  info = Variable(torch.from_numpy(np.array(info)), volatile = test).cuda()
   batch_bugs = dict()
   batch_bugs['info'] = info
   batch_bugs['desc'] = (desc_word, desc_char)

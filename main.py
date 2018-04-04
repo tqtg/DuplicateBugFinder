@@ -1,7 +1,6 @@
 import argparse
 
 import torch.optim as optim
-
 import baseline
 import data_generator
 import proposed
@@ -15,7 +14,7 @@ parser.add_argument('--n_chars', type=int, default=100)
 parser.add_argument('--word_dim', type=int, default=300)
 parser.add_argument('--char_dim', type=int, default=64)
 parser.add_argument('--n_filters', type=int, default=64)
-parser.add_argument('--n_prop', type=int, default=50)
+parser.add_argument('--n_prop', type=int, default=651)
 parser.add_argument('--batch_size', type=int, default=64)
 parser.add_argument('-k', '--top_k', type=int, default=5)
 parser.add_argument('-e', '--epochs', type=int, default=10)
