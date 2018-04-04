@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from utils import load_emb_matrix
 
@@ -8,8 +9,8 @@ class Net(torch.nn.Module):
   def __init__(self, args):
     super(Net, self).__init__()
     self.word_embed = nn.Embedding(args.n_words, args.word_dim)
-    emb_matrix = load_emb_matrix(args.n_words, args.word_dim, args.data)
-    self.word_embed.weight = nn.Parameter(torch.from_numpy(emb_matrix).float())
+    #emb_matrix = load_emb_matrix(args.n_words, args.word_dim, args.data)
+    #self.word_embed.weight = nn.Parameter(torch.from_numpy(emb_matrix).float())
     self.char_embed = nn.Embedding(args.n_chars, args.char_dim)
 
     self.charRNN = nn.GRU(input_size=args.char_dim, hidden_size=50, bidirectional=True, batch_first=True)
@@ -39,7 +40,7 @@ class Net(torch.nn.Module):
     word_short, char_short = self.forward_rnn(short_desc)
     word_long, char_long = self.forward_rnn(desc)
     text_feature = torch.cat([word_short, char_short, word_long, char_long], -1)
-    text_residual = F.Tanh(text_feature + self.text_proj(text_feature))
+    text_residual = F.tanh(text_feature + self.text_proj(text_feature))
 
     info_feature = self.info_proj(info.float())
 
