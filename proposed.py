@@ -39,7 +39,7 @@ class Net(torch.nn.Module):
     word_short, char_short = self.forward_rnn(short_desc)
     word_long, char_long = self.forward_rnn(desc)
     text_feature = torch.cat([word_short, char_short, word_long, char_long], -1)
-    text_residual = text_feature + self.text_proj(text_feature)
+    text_residual = F.Tanh(text_feature + self.text_proj(text_feature))
 
     info_feature = self.info_proj(info.float())
 
