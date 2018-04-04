@@ -104,6 +104,7 @@ def batch_iterator(data, batch_size):
   if len(data) % batch_size > 0:
     num_batches += 1
   loop = tqdm(range(num_batches))
+  loop.set_description('Training')
   for i in loop:
     batch_triplets = []
     for j in range(batch_size):

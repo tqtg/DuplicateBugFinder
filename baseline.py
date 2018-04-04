@@ -22,7 +22,7 @@ class BaseNet(torch.nn.Module):
 
     # self.prop_MLP = nn.Sequential(nn.Linear(args.n_prop, 256), nn.ReLU(),
     #                               nn.Linear(256, 128), nn.ReLU())
-    self.projection = nn.Linear(args.n_filters * 3 + 50*2, 128)
+    self.projection = nn.Linear(args.n_filters * 3 + 50 * 2, 128)
 
 
   def forward(self, x):
@@ -46,5 +46,5 @@ class BaseNet(torch.nn.Module):
     short_desc_feature = torch.mean(out, dim=1)
     #feature = torch.cat([prop_feature, short_desc_feature, long_desc_feature], -1)
     feature = torch.cat([short_desc_feature, long_desc_feature], -1)
-    feature = F.relu(self.projection(feature))
+    feature = self.projection(feature)
     return feature
