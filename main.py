@@ -17,15 +17,15 @@ parser.add_argument('--data', type=str, default='../data/eclipse')
 parser.add_argument('--n_words', type=int, default=20000)
 parser.add_argument('--n_chars', type=int, default=100)
 parser.add_argument('--word_dim', type=int, default=300)
-parser.add_argument('--char_dim', type=int, default=64)
+parser.add_argument('--char_dim', type=int, default=10)
 parser.add_argument('--n_filters', type=int, default=64)
 parser.add_argument('--n_prop', type=int, default=651)
 parser.add_argument('--batch_size', type=int, default=64)
 parser.add_argument('--n_neg', type=int, default=1)
 parser.add_argument('-k', '--top_k', type=int, default=5)
-parser.add_argument('-e', '--epochs', type=int, default=10)
+parser.add_argument('-e', '--epochs', type=int, default=30)
 parser.add_argument('-b', '--baseline', type=bool, default=False)
-parser.add_argument('--lr', type=float, default=1e-3, metavar='LR',
+parser.add_argument('--lr', type=float, default=1e-2, metavar='LR',
                     help='learning rate (default: 1e-3)')
 args = parser.parse_args()
 
@@ -108,6 +108,13 @@ def main():
     print('Final recall@{}={:.4f}'.format(args.top_k, test(args.data, args.top_k)))
     sys.exit(0)
 
+  if os.path.exists(str(args.net) + '_checkpoint.t7'):
+    net = torch.load(str(args.net) + '_checkpoint.t7')
+    features = export(net, args.data)
+    torch.save(features, str(args.net) + '_features.t7')
+    print('Final recall@{}={:.4f}'.format(args.top_k, test(args.data, args.top_k)))
+    sys.exit(0)
+
   if args.net == 'base':
     net = baseline.BaseNet(args)
   else:
@@ -117,6 +124,8 @@ def main():
   best_recall = 0
   best_epoch = 0
   for epoch in range(1, args.epochs + 1):
+    if epoch == 7:
+      optimizer = optim.Adam(net.parameters(), lr=args.lr * 0.1)
     loss = train(epoch, net, optimizer)
     features = export(net, args.data)
     recall = test(args.data, args.top_k, features)

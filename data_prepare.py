@@ -5,8 +5,9 @@ import os
 import random
 import re
 from collections import defaultdict
-from tqdm import tqdm
+
 import nltk
+from tqdm import tqdm
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--data', type=str, default='../data/eclipse')
@@ -56,9 +57,9 @@ def normalize_text(text):
     tokens = re.compile(r'[\W_]+', re.UNICODE).split(text)
     text = ' '.join([func_name_tokenize(token) for token in tokens])
     text = re.sub(r'\d+((\s\d+)+)?', 'number', text)
-    return ' '.join([word.lower() for word in nltk.word_tokenize(text)])
   except:
     return 'description'
+  return ' '.join([word.lower() for word in nltk.word_tokenize(text)])
 
 
 def save_dict(set, filename):
