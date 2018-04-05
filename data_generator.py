@@ -31,9 +31,7 @@ def get_neg_bug(invalid_bugs, bug_ids):
 
 
 def data_padding(data, max_seq_length):
-  max_seq_length = min(max([len(seq) for seq in data]), max_seq_length)
-  if max_seq_length < 6:
-    max_seq_length = 6
+  max_seq_length = min(max([len(seq) for seq in data], [6]), max_seq_length)
   padded_data = np.zeros(shape=[len(data), max_seq_length])
   for i, seq in enumerate(data):
     seq = seq[:max_seq_length]

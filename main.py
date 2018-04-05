@@ -1,3 +1,6 @@
+import gpu_utils
+gpu_utils.pick_gpu_lowest_memory()
+
 import argparse
 import sys
 
@@ -7,6 +10,7 @@ import data_generator
 import proposed
 from data_generator import *
 from loss import *
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--data', type=str, default='../data/eclipse')
@@ -48,7 +52,7 @@ def export(net, data):
   _, bug_ids = read_test_data(data)
   features = {}
 
-  batch_size = 64
+  batch_size = args.batch_size * args.n_neg
   num_batch = int(len(bug_ids) / batch_size)
   if len(bug_ids) % batch_size > 0:
     num_batch += 1

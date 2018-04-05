@@ -55,7 +55,7 @@ def normalize_text(text):
   try:
     tokens = re.compile(r'[\W_]+', re.UNICODE).split(text)
     text = ' '.join([func_name_tokenize(token) for token in tokens])
-    text = re.sub(r'\d+((\s\d+)+)?', ' number ', text)
+    text = re.sub(r'\d+((\s\d+)+)?', 'number', text)
     return ' '.join([word.lower() for word in nltk.word_tokenize(text)])
   except:
     return 'description'
