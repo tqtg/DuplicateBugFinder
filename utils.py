@@ -1,8 +1,9 @@
 import cPickle as pickle
 import os
 import sys
-from tqdm import tqdm
+
 import numpy as np
+from tqdm import tqdm
 
 
 def load_vocabulary(vocab_file):
@@ -29,7 +30,7 @@ def load_emb_matrix(vocab_size, emb_size, data):
   f.close()
   print('Total {} word vectors in Glove.'.format(len(embedding_weights)))
 
-  embedding_matrix = np.random.uniform(-0.5, 0.5, (vocab_size, emb_size))
+  embedding_matrix = np.random.uniform(-1.0, 1.0, (vocab_size, emb_size))
   embedding_matrix[0, :] = np.zeros(emb_size)
 
   oov_count = 0

@@ -1,31 +1,28 @@
-import gpu_utils
-gpu_utils.pick_gpu_lowest_memory()
-
 import argparse
 import sys
 
 import torch.optim as optim
+
 import baseline
 import data_generator
 import proposed
 from data_generator import *
 from loss import *
 
-
 parser = argparse.ArgumentParser()
-parser.add_argument('--data', type=str, default='../data/eclipse')
-parser.add_argument('--n_words', type=int, default=20000)
-parser.add_argument('--n_chars', type=int, default=100)
-parser.add_argument('--word_dim', type=int, default=300)
-parser.add_argument('--char_dim', type=int, default=10)
-parser.add_argument('--n_filters', type=int, default=64)
-parser.add_argument('--n_prop', type=int, default=651)
-parser.add_argument('--batch_size', type=int, default=64)
-parser.add_argument('--n_neg', type=int, default=1)
-parser.add_argument('-k', '--top_k', type=int, default=5)
+parser.add_argument('-d', '--data', type=str, default='../data/eclipse')
+parser.add_argument('-k', '--top_k', type=int, default=25)
 parser.add_argument('-e', '--epochs', type=int, default=30)
 parser.add_argument('-b', '--baseline', type=bool, default=False)
-parser.add_argument('--lr', type=float, default=1e-2, metavar='LR',
+parser.add_argument('-nw', '--n_words', type=int, default=20000)
+parser.add_argument('-nc', '--n_chars', type=int, default=100)
+parser.add_argument('-wd', '--word_dim', type=int, default=300)
+parser.add_argument('-cd', '--char_dim', type=int, default=50)
+parser.add_argument('-nf', '--n_filters', type=int, default=64)
+parser.add_argument('-np', '--n_prop', type=int, default=651)
+parser.add_argument('-bs', '--batch_size', type=int, default=64)
+parser.add_argument('-nn', '--n_neg', type=int, default=1)
+parser.add_argument('-lr', '--learning_rate', type=float, default=1e-3, metavar='LR',
                     help='learning rate (default: 1e-3)')
 args = parser.parse_args()
 
@@ -120,12 +117,12 @@ def main():
   else:
     net = proposed.Net(args)
   net.cuda()
-  optimizer = optim.Adam(net.parameters(), lr=args.lr)
+  optimizer = optim.Adam(net.parameters(), lr=args.learning_rate)
   best_recall = 0
   best_epoch = 0
   for epoch in range(1, args.epochs + 1):
-    if epoch == 7:
-      optimizer = optim.Adam(net.parameters(), lr=args.lr * 0.1)
+    if epoch == 10:
+      optimizer = optim.Adam(net.parameters(), lr=args.learning_rate * 0.1)
     loss = train(epoch, net, optimizer)
     features = export(net, args.data)
     recall = test(args.data, args.top_k, features)

@@ -52,8 +52,8 @@ def read_batch_bugs(batch_bugs, data, test=False):
   for bug_id in batch_bugs:
     bug = pickle.load(open(os.path.join(data, 'bugs', '{}.pkl'.format(bug_id)), 'rb'))
     desc_word.append(bug['description_word'])
-    short_desc_word.append(bug['short_desc_word'])
     desc_char.append(bug['description_char'])
+    short_desc_word.append(bug['short_desc_word'])
     short_desc_char.append(bug['short_desc_char'])
     info_ = np.concatenate((
       to_one_hot(bug['bug_severity'], info_dict['bug_severity']),
@@ -64,8 +64,8 @@ def read_batch_bugs(batch_bugs, data, test=False):
       to_one_hot(bug['version'], info_dict['version'])))
     info.append(info_)
   desc_word = Variable(torch.from_numpy(data_padding(desc_word, 500)), volatile=test).cuda()
-  short_desc_word = Variable(torch.from_numpy(data_padding(short_desc_word, 100)), volatile=test).cuda()
   desc_char = Variable(torch.from_numpy(data_padding(desc_char, 2000)), volatile=test).cuda()
+  short_desc_word = Variable(torch.from_numpy(data_padding(short_desc_word, 100)), volatile=test).cuda()
   short_desc_char = Variable(torch.from_numpy(data_padding(short_desc_char, 400)), volatile=test).cuda()
   info = Variable(torch.from_numpy(np.array(info)), volatile=test).cuda()
   batch_bugs = dict()
@@ -116,6 +116,7 @@ def read_train_data(data):
 
 train_data = None
 dup_sets = None
+
 
 def batch_iterator(data, batch_size, n_neg):
   global train_data

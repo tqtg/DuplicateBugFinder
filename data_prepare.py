@@ -18,7 +18,6 @@ args = parser.parse_args()
 
 UNK = 1
 
-
 def read_pairs():
   bug_pairs = []
   bug_ids = set()
