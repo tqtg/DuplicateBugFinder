@@ -11,6 +11,12 @@ LE Trung Hoang
 ## How to run
 Get data sets from here: http://alazar.people.ysu.edu/msr14data/
 
+### Requirements
+- Python 2.7
+- PyTorch
+- tqdm
+- nltk
+
 ### Data preprocessing
 ```
 python data_prepare.py
@@ -37,12 +43,12 @@ optional arguments:
   -h, --help            show this help message and exit
   -d, --data            DATA
                         Path to data folder
+  -b, --baseline        BASELINE
+                        Run with baseline model (default: False)
   -k, --top_k           TOP_K
                         Number of top candidates for Recall@k evaluation (default: 25)
   -e, --epochs          EPOCHS
                         Number of training epochs (default: 30)
-  -b, --baseline        BASELINE
-                        Run with baseline model (default: False)
   -nw, --n_words        NUM_WORDS
                         Number of words in vocabulary (default: 20,000)
   -nc, --n_chars        NUM_CHARS

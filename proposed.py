@@ -31,8 +31,8 @@ class Net(nn.Module):
     self.char_RNN = nn.GRU(input_size=args.char_dim, hidden_size=50, bidirectional=True, batch_first=True)
 
     self.info_proj = nn.Sequential(nn.Linear(args.n_prop, 100), nn.Tanh())
-    self.residual = Residual(500, nn.Tanh())
-    self.projection = nn.Linear(500, 100)
+    self.residual = Residual(300, nn.Tanh())
+    self.projection = nn.Linear(300, 100)
 
   def forward_cnn(self, x):
     # x = [word, char]
@@ -56,6 +56,7 @@ class Net(nn.Module):
     word_short, char_short = self.forward_rnn(x['short_desc'])
 
     # feature = torch.cat([info_feature, word_short, word_long], -1)
-    feature = torch.cat([info_feature, word_short, word_long, char_short, char_long], -1)
+    # feature = torch.cat([info_feature, word_short, word_long, char_short, char_long], -1)
+    feature = torch.cat([info_feature, word_short, word_long], -1)
     feature_res = self.residual(feature)
     return self.projection(feature_res)

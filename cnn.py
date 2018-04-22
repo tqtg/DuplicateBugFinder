@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-
 class CNN_Text(nn.Module):
   def __init__(self, input_dim, n_filters):
     super(CNN_Text, self).__init__()
